@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\switchviews.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\switchviews.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\firstpersonfootaudios.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\firstpersonfootaudios.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,23 +14,19 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "SwitchViews.cs",
-              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\SwitchViews.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\SwitchViews.cs",
-              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\SwitchViews.cs",
-              "RelativeToolTip": "Assets\\Scripts\\SwitchViews.cs",
-              "ViewState": "AgIAADAAAAAAAAAAAAAcwCIAAAAUAAAAAAAAAA==",
+              "Title": "FirstPersonFootAudios.cs",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\FirstPersonFootAudios.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\FirstPersonFootAudios.cs",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\FirstPersonFootAudios.cs",
+              "RelativeToolTip": "Assets\\Scripts\\FirstPersonFootAudios.cs",
+              "ViewState": "AgIAADUAAAAAAAAAAAAgwEMAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-13T16:01:21.18Z",
+              "WhenOpened": "2025-12-14T16:18:54.675Z",
               "EditorCaption": ""
             }
           ]
