@@ -1,66 +1,140 @@
-using UnityEngine;
+ï»¿using UnityEngine;
+using StarterAssets;
+using System.Reflection;
+using System.Collections;
 
 public class PlayerInteraction : MonoBehaviour
 {
-    [Header("ÉäÏß¼ì²âµÄ×î´ó¾àÀë")]
+    [Header("è®¾ç½®")]
     public float interactionDistance = 10.0f;
-
-    // Ä¿±êÎïÌåµÄ±êÇ©
-    private const string targetTag = "Picture";
-
-    // ¹Ø¼ü£ºÎÒÃÇÒªºöÂÔµÄ²ã¼¶Ãû×Ö
     private const string ignoreLayerName = "Player";
-
-    // ×îÖÕ¼ÆËã³öµÄÕÚÕÖ
     private int finalLayerMask;
+    private ImageExhibition lastFrameItem;
 
     private void Start()
     {
-        // ÕÒµ½ "Player" ²ãµÄË÷Òı
         int playerLayerIndex = LayerMask.NameToLayer(ignoreLayerName);
+        if (playerLayerIndex != -1) finalLayerMask = ~(1 << playerLayerIndex);
+        else finalLayerMask = ~0;
 
-        if (playerLayerIndex != -1)
-        {
-            // 2. ºËĞÄÊıÑ§¹«Ê½£º
-            // 1 << index  -> Ö»¿ªÆô Player ²ã
-            // ~ (...)     -> È¡·´£¬±ä³É¡°¿ªÆô³ıÁËPlayerÒÔÍâµÄËùÓĞ²ã¡±
-            finalLayerMask = ~(1 << playerLayerIndex);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
 
-            Debug.Log($"[³õÊ¼»¯³É¹¦] ÒÑÉèÖÃÉäÏßÕÚÕÖ£¬½«ºöÂÔ²ã¼¶: {ignoreLayerName}");
-        }
-        else
+        // å¦‚æœæ ‡è®°ä¸ºéœ€è¦æ¢å¤ï¼Œå¯åŠ¨åç¨‹
+        if (GameDate.ShouldRestorePosition)
         {
-            // Èç¹ûÃ»ÕÒµ½Õâ¸ö²ã£¬¾Í¼ì²âËùÓĞ¶«Î÷£¨»á³öÎÊÌâ£¬µ«Ò²±È±¨´íºÃ£©
-            Debug.LogError($"[³õÊ¼»¯¾¯¸æ] ÕÒ²»µ½ÃûÎª '{ignoreLayerName}' µÄLayer£¡Çë¼ì²éÉèÖÃ¡£");
-            finalLayerMask = ~0;
+            StartCoroutine(RestorePlayerState());
         }
+    }
+
+    // --- ã€æ ¸å¿ƒä¿®å¤ã€‘å»¶è¿Ÿæ¢å¤åç¨‹ ---
+    IEnumerator RestorePlayerState()
+    {
+        // 1. ç­‰å¾…ä¸€å¸§ï¼Œè®© SwitchViews çš„ Start() å…ˆè·‘å®Œ
+        yield return new WaitForEndOfFrame();
+
+        Debug.Log(">>> å¼€å§‹æ‰§è¡Œå»¶è¿Ÿæ¢å¤...");
+
+        // 2. è·å–ç»„ä»¶
+        CharacterController cc = GetComponent<CharacterController>();
+        SwitchViews switchView = GetComponent<SwitchViews>();
+
+        // 3. ã€å…ˆã€‘æš‚æ—¶å…³é—­ CCï¼Œé˜²æ­¢å®ƒæŠµæŠ—ä½ç½®å˜åŒ–
+        if (cc != null) cc.enabled = false;
+
+        // 4. ã€æ¬¡ã€‘æ¢å¤è§†è§’ (è¿™æ­¥å†…éƒ¨å¯èƒ½ä¼šåŠ¨ä½ç½®ï¼Œæ‰€ä»¥è¦åœ¨è®¾ç½®ä½ç½®ä¹‹å‰åš)
+        if (switchView != null)
+        {
+            Debug.Log($"æ­£åœ¨æ¢å¤è§†è§’ä¸º: {(GameDate.WasFirstPerson ? "ç¬¬ä¸€äººç§°" : "ç¬¬ä¸‰äººç§°")}");
+            switchView.ForceSwitch(GameDate.WasFirstPerson);
+        }
+
+        // 5. ã€åã€‘å¼ºè¡Œè¦†ç›–ä½ç½® (è¿™æ˜¯é˜²æ­¢ä½ç½®åç§»çš„å…³é”®ï¼)
+        // æ— è®ºå‰é¢å‘ç”Ÿäº†ä»€ä¹ˆï¼Œè¿™é‡ŒæŠŠä½ç½®å¼ºåˆ¶é’‰æ­»åœ¨ä¿å­˜ç‚¹
+        transform.position = GameDate.LastPlayerPosition;
+        transform.rotation = GameDate.LastPlayerRotation;
+
+        // 6. ã€è¡¥ã€‘åå°„ä¿®å¤å†…éƒ¨ Yaw (é˜²æ­¢è§†è§’å›å¼¹)
+        float targetYaw = GameDate.LastPlayerRotation.eulerAngles.y;
+        SyncInternalYaw(targetYaw);
+
+        Debug.Log($"æœ€ç»ˆä½ç½®å·²æ¢å¤è‡³: {transform.position}");
+
+        // 7. ã€ç»ˆã€‘é‡æ–°å¼€å¯ CC
+        if (cc != null) cc.enabled = true;
+
+        // å…³é—­å¼€å…³
+        GameDate.ShouldRestorePosition = false;
     }
 
     private void Update()
     {
         Camera mainCam = Camera.main;
         if (mainCam == null) return;
-
         Ray ray = mainCam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         RaycastHit hit;
+        Color debugColor = Color.yellow;
 
-        // µ÷ÊÔ»æÖÆ£º»ÆÉ«Ïß (Ö»ÓĞÔÚ Scene ÊÓÍ¼ÄÜ¿´µ½)
-        Debug.DrawRay(ray.origin, ray.direction * interactionDistance, Color.yellow);
-
-        // 3. ÕâÀïµÄ¹Ø¼ü²ÎÊı£ºfinalLayerMask
-        // Ëü¸æËß Unity£º¡°Çë¼ì²âËùÓĞÎïÌå£¬Î¨¶ÀÌø¹ı Player ²ã¡±
         if (Physics.Raycast(ray, out hit, interactionDistance, finalLayerMask))
         {
-            if (hit.collider.gameObject.CompareTag(targetTag))
+            // ä½¿ç”¨ GetComponentInParent ç¡®ä¿èƒ½æ£€æµ‹åˆ°å­ç‰©ä½“
+            ImageExhibition itemScript = hit.collider.GetComponentInParent<ImageExhibition>();
+            if (itemScript != null)
             {
-                // Ö»ÓĞÕâÀï¼ì²âµ½ Picture ²ÅÊä³ö£¬±ÜÃâË¢ÆÁ
-                Debug.Log($"¡¾¶Ô×¼³É¹¦¡¿·¢ÏÖ»­¿òµÄ{hit.collider.gameObject.name}");
-                //½»»¥º¯Êı
-                if (Input.GetKeyDown(KeyCode.E))
+                debugColor = Color.red;
+                if (lastFrameItem != itemScript)
                 {
-                    Debug.Log("--- ½»»¥´¥·¢ ---");
+                    if (lastFrameItem != null) lastFrameItem.SetHighlight(false);
+                    itemScript.SetHighlight(true);
+                    lastFrameItem = itemScript;
+                }
+
+                // å…¼å®¹ E é”®å’Œé¼ æ ‡å·¦é”®
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
+                {
+                    itemScript.StartDisplay();
                 }
             }
+            else { ClearHighlight(); }
+        }
+        else { ClearHighlight(); }
+
+        Debug.DrawRay(ray.origin, ray.direction * interactionDistance, debugColor);
+    }
+
+    private void ClearHighlight()
+    {
+        if (lastFrameItem != null) { lastFrameItem.SetHighlight(false); lastFrameItem = null; }
+    }
+
+    // åå°„ä¿®å¤ StarterAssets å†…éƒ¨æ—‹è½¬å˜é‡
+    private void SyncInternalYaw(float yaw)
+    {
+        MonoBehaviour controller = null;
+        if (GetComponent<FirstPersonController>() != null && GetComponent<FirstPersonController>().enabled)
+            controller = GetComponent<FirstPersonController>();
+        else if (GetComponent<ThirdPersonController>() != null && GetComponent<ThirdPersonController>().enabled)
+            controller = GetComponent<ThirdPersonController>();
+
+        if (controller == null) controller = GetComponent<FirstPersonController>();
+        if (controller == null) controller = GetComponent<ThirdPersonController>();
+
+        if (controller != null)
+        {
+            string[] possibleFieldNames = new string[] { "_cinemachineTargetYaw", "CinemachineTargetYaw", "_targetRotation" };
+            bool success = false;
+
+            foreach (var name in possibleFieldNames)
+            {
+                FieldInfo field = controller.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (field != null)
+                {
+                    field.SetValue(controller, yaw);
+                    success = true;
+                    break;
+                }
+            }
+            if (!success) Debug.LogWarning($"[åå°„è­¦å‘Š] æ— æ³•åŒæ­¥è§†è§’Yawï¼Œå¯èƒ½å¯¼è‡´è§†è§’è½»å¾®å›å¼¹ã€‚");
         }
     }
 }

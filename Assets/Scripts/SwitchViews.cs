@@ -5,19 +5,13 @@ using System.Reflection;
 public class SwitchViews : MonoBehaviour
 {
     [Header("第一人称视角配置")]
-    [Tooltip("第一人称父节点，如One_Player")]
     public GameObject fpcRoot;
-    [Tooltip("第一人称玩家模型，如PlayerCapsule")]
     public Transform fpcPlayer;
-    [Tooltip("第一人称玩家相机节点，如PlayerCameraRoot")]
     public Transform fpcCameraRoot;
 
     [Header("第三人称视角配置")]
-    [Tooltip("第三人称父节点，如Third_Player")]
     public GameObject tpcRoot;
-    [Tooltip("第三人称玩家模型，如PlayerArmature")]
     public Transform tpcPlayer;
-    [Tooltip("第一人称玩家相机节点，如PlayerCameraRoot")]
     public Transform tpcCameraRoot;
 
     [Header("快捷键设置")]
@@ -30,13 +24,13 @@ public class SwitchViews : MonoBehaviour
 
     // 缓存组件引用
     private StarterAssetsInputs fpcInput, tpcInput;
-    private MonoBehaviour fpcScript, tpcScript; // 使用 MonoBehaviour 存储脚本，减少类型依赖
+    private MonoBehaviour fpcScript, tpcScript;
 
     void Start()
     {
         InitializeComponents();
 
-        // 为了防止 Input System 抢占，开局先全部关闭
+        // 防止 Input System 抢占，先全部关闭
         fpcRoot.SetActive(false);
         tpcRoot.SetActive(false);
 
@@ -44,7 +38,7 @@ public class SwitchViews : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // 应用初始视角 (复用核心切换逻辑)
+        // 应用初始视角
         SetViewMode(startInFirstPerson);
     }
 
@@ -56,52 +50,44 @@ public class SwitchViews : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 核心切换逻辑：设置当前是第一人称还是第三人称
-    /// </summary>
+    // --- 核心切换逻辑 ---
     private void SetViewMode(bool toFps)
     {
-        // 1. 确定 源(旧) 和 目标(新)
         GameObject oldRoot = toFps ? tpcRoot : fpcRoot;
         GameObject newRoot = toFps ? fpcRoot : tpcRoot;
-
         Transform oldPlayer = toFps ? tpcPlayer : fpcPlayer;
         Transform newPlayer = toFps ? fpcPlayer : tpcPlayer;
-
         StarterAssetsInputs oldInput = toFps ? tpcInput : fpcInput;
         StarterAssetsInputs newInput = toFps ? fpcInput : tpcInput;
 
-        // 2. 关闭旧视角 (释放输入权)
+        // 关闭旧视角
         if (oldRoot.activeSelf)
         {
             oldRoot.SetActive(false);
             if (oldInput) ResetInput(oldInput);
         }
 
-        // 3. 计算对齐数据 (基于主摄像机，实现"所见即所得")
+        // 计算对齐
         GetCameraAlignment(oldPlayer, out Vector3 targetPos, out float targetYaw, out float targetPitch);
 
-        // 4. 应用数据到新角色 (包括物理位置和脚本内部变量)
+        // 应用位置
         newPlayer.position = targetPos;
-        newPlayer.rotation = Quaternion.Euler(0, targetYaw, 0); // 强制转身对齐
+        newPlayer.rotation = Quaternion.Euler(0, targetYaw, 0);
 
-        // 使用反射写入私有变量，防止漂移
+        // 反射同步变量
         MonoBehaviour targetScript = toFps ? fpcScript : tpcScript;
         SyncInternalVariables(targetScript, targetYaw, targetPitch);
 
-        // 5. 激活新视角
+        // 激活新视角
         newRoot.SetActive(true);
         if (newInput) ResetInput(newInput);
 
-        // 更新状态记录
         isFirstPerson = toFps;
     }
 
     // --- 辅助方法 ---
-
     private void InitializeComponents()
     {
-        // 使用 true 参数确保即使物体隐藏也能找到组件
         if (fpcRoot)
         {
             fpcInput = fpcRoot.GetComponentInChildren<StarterAssetsInputs>(true);
@@ -116,10 +102,7 @@ public class SwitchViews : MonoBehaviour
 
     private void GetCameraAlignment(Transform fallbackTransform, out Vector3 pos, out float yaw, out float pitch)
     {
-        // 位置：稍微抬高一点防止卡地
         pos = fallbackTransform.position + Vector3.up * 0.05f;
-
-        // 旋转：优先使用主摄像机朝向，如果没有则使用旧模型朝向
         Camera mainCam = Camera.main;
         if (mainCam != null)
         {
@@ -129,17 +112,14 @@ public class SwitchViews : MonoBehaviour
         else
         {
             yaw = fallbackTransform.eulerAngles.y;
-            pitch = 0f; // 没摄像机时默认平视
+            pitch = 0f;
         }
-
-        // 规范化 Pitch 角度
         if (pitch > 180) pitch -= 360;
     }
 
     private void SyncInternalVariables(MonoBehaviour script, float yaw, float pitch)
     {
         if (script == null) return;
-        // 反射修改 StarterAssets 的私有变量
         SetPrivateField(script, "_cinemachineTargetYaw", yaw);
         SetPrivateField(script, "_cinemachineTargetPitch", pitch);
     }
@@ -157,5 +137,23 @@ public class SwitchViews : MonoBehaviour
         input.jump = false;
         input.sprint = false;
         input.analogMovement = false;
+    }
+
+    // =========================================================
+    // 【关键修改】取消注释以下两个方法，供 PlayerInteraction 调用
+    // =========================================================
+
+    // 判断当前是否是第一人称
+    public bool IsInFirstPerson()
+    {
+        // 简单判断：如果第一人称根节点是激活的，那就是第一人称
+        return fpcRoot != null && fpcRoot.activeSelf;
+    }
+
+    // 强行切换到指定视角 (供恢复存档使用)
+    public void ForceSwitch(bool toFirstPerson)
+    {
+        // 直接调用核心逻辑，不经过按键判断
+        SetViewMode(toFirstPerson);
     }
 }
