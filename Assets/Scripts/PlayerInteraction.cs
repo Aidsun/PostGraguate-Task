@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using StarterAssets;
 using System.Reflection;
-// using System.Collections; // 不需要这个了
 
 public class PlayerInteraction : MonoBehaviour
 {
@@ -9,7 +8,9 @@ public class PlayerInteraction : MonoBehaviour
     public float interactionDistance = 10.0f;
     private const string ignoreLayerName = "Player";
     private int finalLayerMask;
-    private ImageExhibition lastFrameItem;
+
+    // 【修改】改成 MonoBehaviour，以便同时支持图片和视频脚本
+    private MonoBehaviour lastFrameItem;
 
     private void Start()
     {
@@ -20,40 +21,31 @@ public class PlayerInteraction : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // 如果有存档，立即恢复 (不再使用协程)
+        // 立即恢复位置
         if (GameDate.ShouldRestorePosition)
         {
             RestorePlayerPosition();
         }
     }
 
-    // --- 【核心修改】改为普通方法，移除延迟 ---
-    void RestorePlayerPosition() // 这里的 IEnumerator 改成了 void
+    void RestorePlayerPosition()
     {
-        // 1. 删除 yield return null; 
-        // 因为 SwitchViews 在 Awake 里已经初始化好了，我们不需要再等一帧了！
-        // 这样代码就会在画面渲染的第一帧之前执行完毕。
-
         Debug.Log($">>> [立即恢复] 目标位置: {GameDate.LastPlayerPosition}");
-
-        // 2. 找到 SwitchViews
         SwitchViews switchScript = GetComponent<SwitchViews>();
         if (switchScript != null)
         {
             Transform activePlayer = switchScript.GetActivePlayerTransform();
             CharacterController cc = activePlayer.GetComponent<CharacterController>();
 
-            // 3. 瞬间瞬移
             if (cc != null) cc.enabled = false;
 
             activePlayer.position = GameDate.LastPlayerPosition;
             activePlayer.rotation = GameDate.LastPlayerRotation;
 
-            // 4. 同步视角
+            // 修复视角
             float targetYaw = GameDate.LastPlayerRotation.eulerAngles.y;
             SyncInternalYaw(activePlayer.gameObject, targetYaw);
 
-            // 5. 强制物理刷新
             Physics.SyncTransforms();
 
             if (cc != null) cc.enabled = true;
@@ -64,7 +56,6 @@ public class PlayerInteraction : MonoBehaviour
         {
             Debug.LogError("PlayerInteraction 未能找到 SwitchViews 组件！");
         }
-
         GameDate.ShouldRestorePosition = false;
     }
 
@@ -74,34 +65,64 @@ public class PlayerInteraction : MonoBehaviour
         if (mainCam == null) return;
         Ray ray = mainCam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         RaycastHit hit;
-        Color debugColor = Color.yellow;
 
         if (Physics.Raycast(ray, out hit, interactionDistance, finalLayerMask))
         {
-            ImageExhibition itemScript = hit.collider.GetComponentInParent<ImageExhibition>();
-            if (itemScript != null)
+            // 1. 尝试找图片脚本
+            ImageExhibition imgScript = hit.collider.GetComponentInParent<ImageExhibition>();
+            // 2. 尝试找视频脚本
+            VideoExhibition vidScript = hit.collider.GetComponentInParent<VideoExhibition>();
+
+            // --- 统一逻辑 ---
+            if (imgScript != null)
             {
-                debugColor = Color.red;
-                if (lastFrameItem != itemScript)
-                {
-                    if (lastFrameItem != null) lastFrameItem.SetHighlight(false);
-                    itemScript.SetHighlight(true);
-                    lastFrameItem = itemScript;
-                }
+                HandleHighlight(imgScript, imgScript.ImageTitle);
+                // 交互
                 if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
-                {
-                    itemScript.StartDisplay();
-                }
+                    imgScript.StartDisplay();
             }
-            else { ClearHighlight(); }
+            else if (vidScript != null)
+            {
+                HandleHighlight(vidScript, vidScript.VideoTitle);
+                // 交互
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
+                    vidScript.StartDisplay();
+            }
+            else
+            {
+                ClearHighlight();
+            }
         }
-        else { ClearHighlight(); }
-        Debug.DrawRay(ray.origin, ray.direction * interactionDistance, debugColor);
+        else
+        {
+            ClearHighlight();
+        }
+    }
+
+    // 通用高亮处理方法
+    void HandleHighlight(MonoBehaviour currentItem, string itemName)
+    {
+        if (lastFrameItem != currentItem)
+        {
+            ClearHighlight(); // 先清除旧的
+
+            // 开启新的
+            if (currentItem is ImageExhibition img) img.SetHighlight(true);
+            if (currentItem is VideoExhibition vid) vid.SetHighlight(true);
+
+            lastFrameItem = currentItem;
+            // Debug.Log($"瞄准了: {itemName}");
+        }
     }
 
     private void ClearHighlight()
     {
-        if (lastFrameItem != null) { lastFrameItem.SetHighlight(false); lastFrameItem = null; }
+        if (lastFrameItem != null)
+        {
+            if (lastFrameItem is ImageExhibition img) img.SetHighlight(false);
+            if (lastFrameItem is VideoExhibition vid) vid.SetHighlight(false);
+            lastFrameItem = null;
+        }
     }
 
     private void SyncInternalYaw(GameObject playerObj, float yaw)

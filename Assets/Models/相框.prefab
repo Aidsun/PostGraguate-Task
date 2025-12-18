@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2507291721546619586}
   - component: {fileID: 7636155879523943615}
   m_Layer: 0
-  m_Name: "\u56FE\u7247\u6750\u8D28\u7403"
+  m_Name: "\u5C01\u9762\u6750\u8D28\u7403"
   m_TagString: Picture
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -286,7 +286,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5132114928878336239}
   - component: {fileID: 2856279209142314499}
-  - component: {fileID: 3897003841295499312}
   m_Layer: 0
   m_Name: "\u76F8\u6846"
   m_TagString: Picture
@@ -330,26 +329,6 @@ MonoBehaviour:
   showColliderPreview: 0
   selectedTag: Picture
   selectedLayer: 0
---- !u!114 &3897003841295499312
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3955687691171972593}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de8c755571e55cb4c94006d3083bbd2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ImageTitle: "\u7B2C\u4E00\u5F20\u56FE\u7247"
-  ImageSprite: {fileID: 21300000, guid: dbd7181f1dd84834ab02b94526d3845b, type: 3}
-  ImageDescriptionText: "\u6211\u662F\u7B2C\u4E00\u5F20\u56FE\u7247\u7684\u63CF\u8FF0\uFF0C\u4E0D\u662F\u9ED8\u8BA4\u6587\u672C\u54C8"
-  artAudioClip: {fileID: 0}
-  ContentCover: {fileID: 2507291721546619586}
-  outlineRenderer: {fileID: 1422902775866896731}
-  ShowTitle: {fileID: 1472782406874075297}
-  targetSceneName: ImageContent
 --- !u!1 &5139312643964893570
 GameObject:
   m_ObjectHideFlags: 0
