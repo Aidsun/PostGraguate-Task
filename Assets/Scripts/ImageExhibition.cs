@@ -4,20 +4,32 @@ using TMPro;
 
 public class ImageExhibition : MonoBehaviour
 {
-    [Header("展品信息")]
+    [Header("图片展品信息")]
+
+    [Tooltip("图片标题")]
     public string ImageTitle;
-    [TextArea(5, 10)] public string ImageDescriptionText;
+    [Tooltip("图片文件")]
     public Sprite ImageSprite;
+    [Tooltip("图片描述文本")]
+    [TextArea(5, 10)] public string ImageDescriptionText;
+    [Tooltip("图片描述音频")]
     public AudioClip artAudioClip;
-    public TMP_Text ShowTitle;
-    [Header("高亮设置")]
+
+    [Header("组件设置")]
+    [Tooltip("展示封面组件")]
+    public Renderer ContentCover;
+    [Tooltip("高亮组件")]
     public Renderer outlineRenderer;
+    [Tooltip("标题显示组件")]
+    public TMP_Text ShowTitle;
 
     [Header("跳转目标场景")]
+    [Tooltip("图片场景名称")]
     public string targetSceneName = "ImageContent";
 
     private void Start()
     {
+        //检测3D标题组件
         if (ShowTitle != null)
         {
             //展示标题内容
@@ -25,13 +37,25 @@ public class ImageExhibition : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("展示标题ShowTitle组件未绑定，无法显示标题。");
+            Debug.LogWarning($"{ImageTitle}的展示标题ShowTitle组件未绑定，无法显示标题。");
+        }
+        //检测封面组件
+        if(ContentCover != null)
+        {
+            //设置渲染方式
+            ContentCover.material.shader = Shader.Find("Unlit/Texture");
+            //设置封面贴图
+            ContentCover.material.mainTexture = ImageSprite.texture;
+        }
+        else
+        {
+            Debug.LogWarning($"{ImageTitle}的封面组件ContentCover未绑定，无法显示封面。");
         }
     }
     public void SetHighlight(bool isActive)
     {
         if (outlineRenderer != null)
-            outlineRenderer.material.color = isActive ? Color.yellow : Color.white;
+            outlineRenderer.material.color = isActive ? Color.blue : Color.white;
     }
 
     public void StartDisplay()

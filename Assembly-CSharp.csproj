@@ -72,7 +72,7 @@
     <Compile Include="Assets\Scripts\ImageExhibition.cs" />
     <Compile Include="Assets\Scripts\ImageDisplayController.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\EnvMapAnimator.cs" />
-    <Compile Include="Assets\Scripts\PlayerInteraction_Finish.cs" />
+    <Compile Include="Assets\Scripts\VideoExhibition.cs" />
     <Compile Include="Assets\StarterAssets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_A.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01_UGUI.cs" />
