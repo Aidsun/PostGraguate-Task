@@ -167,7 +167,7 @@ Transform:
   m_GameObject: {fileID: 4841599856524650021}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.5235343, z: -0, w: 0.8520046}
-  m_LocalPosition: {x: 3.6, y: 0, z: -38}
+  m_LocalPosition: {x: -46.5, y: 0, z: 60.9}
   m_LocalScale: {x: 0.11471352, y: 0.11471352, z: 0.11471352}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -209,7 +209,9 @@ MonoBehaviour:
   VideoTitle: "\u7B2C\u4E00\u4E2A\u89C6\u9891"
   VideoFile: {fileID: 32900000, guid: 41988de27c637a344a8c50b800c3166b, type: 3}
   VideoCover: {fileID: 21300000, guid: a84489ba6b11add479d065bd12e58963, type: 3}
-  VideoDescriptionText: "\u8FD9\u662F\u5C55\u793A\u7684\u7B2C\u4E00\u4E2A\u89C6\u9891\uFF0C\u4E0D\u662F\u9ED8\u8BA4\u6587\u672C"
+  VideoDescriptionText: "\u8FD9\u662F\u5C55\u793A\u7684\u7B2C\u4E00\u4E2A\u89C6\u9891\uFF0C\u4E0D\u662F\u9ED8\u8BA4\u6587\u672C\uFF0C\u4E3A\u4E86\u8BC1\u660E\u81EA\u5DF1\uFF0C\u6211\u53EF\u4EE5\u731C\u5230\u4F60\u665A\u996D\u5403\u7684\u4EC0\u4E48\uFF0C\u6CA1\u9519\uFF0C\u5C31\u662F\u4F60\u60F3\u7684\u90A3\u6837\uFF01"
+  enableVoiceover: 1
+  artAudioClip: {fileID: 8300000, guid: fdde0d963e3583142be58f09dd028be7, type: 3}
   ContentCover: {fileID: 6876733890045414516}
   outlineRenderer: {fileID: 4112338622763292376}
   ShowTitle: {fileID: 1195186627217121975}

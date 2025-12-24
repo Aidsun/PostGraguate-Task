@@ -20,4 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/PanoramaContent.unity
     guid: c0e8bc5728522c749a89a4cf7e961b3b
+  - enabled: 1
+    path: Assets/Scenes/StartGame.unity
+    guid: e410c4b7e8987214db1338b089e2c163
   m_configObjects: {}
