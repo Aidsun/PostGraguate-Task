@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using StarterAssets;
 using System.Reflection;
+using System; // 【关键修复】加上了这句，解决红色报错！
 
 public class SwitchViews : MonoBehaviour
 {
@@ -22,9 +23,16 @@ public class SwitchViews : MonoBehaviour
     [Tooltip("是否默认第一人称视角（默认值，会被设置面板覆盖）")]
     public bool startInFirstPerson = true;
 
+    [Header("🎮 手感微调")]
+    [Tooltip("固定鼠标灵敏度 (不再受设置面板控制)")]
+    public float fixedSensitivity = 1.5f;
+
     // 缓存组件引用
     private StarterAssetsInputs fpcInput, tpcInput;
     private MonoBehaviour fpcScript, tpcScript;
+
+    // 标志：是否已经恢复了位置
+    private bool hasRestoredPosition = false;
 
     void Awake()
     {
@@ -62,17 +70,23 @@ public class SwitchViews : MonoBehaviour
             ApplyCurrentSettings(SettingPanel.CurrentSettings);
         }
 
-        // ------------------ 【核心逻辑：开局定胜负】 ------------------
-        // 优先检查是否有存档的恢复请求 (GameDate)
-        if (GameDate.ShouldRestorePosition)
+        // 优先检查是否需要恢复位置 (来自展品返回)
+        if (GameDate.ShouldRestorePosition && !hasRestoredPosition)
         {
-            SetViewMode(GameDate.WasFirstPerson);
+            Debug.Log($"检测到需要恢复位置，位置={GameDate.LastPlayerPosition}, 视角模式={GameDate.WasFirstPerson}");
+
+            // 使用保存的视角模式
+            SetViewModeWithRestoration(GameDate.WasFirstPerson);
+
+            // 标记已恢复，防止重复执行
+            hasRestoredPosition = true;
+            GameDate.ShouldRestorePosition = false;
         }
         else
         {
-            // 如果没有恢复请求，则使用 SettingPanel 里的设置 (如果有) 或者默认值
-            // 注意：这里我们暂时用 startInFirstPerson，稍后 SettingPanel 会来覆盖它
+            // 正常启动，使用设置面板的默认配置
             SetViewMode(startInFirstPerson);
+            hasRestoredPosition = false;
         }
     }
 
@@ -81,28 +95,45 @@ public class SwitchViews : MonoBehaviour
         // 监听按键切换（使用当前设置的按键）
         if (Input.GetKeyDown(switchKey))
         {
-            // 取反：当前是第一人称，就切第三，反之亦然
             SetViewMode(!IsInFirstPerson());
         }
     }
 
-    // 设置应用方法
+    // =========================================================
+    // 设置应用方法 (由 SettingPanel 调用)
+    // =========================================================
     private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
     {
         // 应用视角切换快捷键
         switchKey = settings.viewSwitchKey;
 
-        // 应用默认视角设置
+        // 应用默认视角设置 (仅影响首次进入)
         startInFirstPerson = settings.defaultFirstPersonView;
 
         // 应用角色控制参数
-        UpdateCharacterSettings(settings.moveSpeed, settings.jumpHeight, settings.mouseXSensitivity);
+        // 灵敏度直接使用本地 fixedSensitivity
+        UpdateCharacterSettings(settings.moveSpeed, settings.jumpHeight, fixedSensitivity);
 
-        Debug.Log($"SwitchViews: 应用设置 - 切换键: {switchKey}, 默认视角: {startInFirstPerson}");
+        Debug.Log($"SwitchViews: 应用设置 - 切换键: {switchKey}, 固定灵敏度: {fixedSensitivity}");
     }
 
-    // --- 核心切换逻辑 ---
+    // =========================================================
+    // 核心切换逻辑
+    // =========================================================
+
+    // 普通切换
     private void SetViewMode(bool toFps)
+    {
+        SetViewModeInternal(toFps, false);
+    }
+
+    // 带位置恢复的切换
+    private void SetViewModeWithRestoration(bool toFps)
+    {
+        SetViewModeInternal(toFps, true);
+    }
+
+    private void SetViewModeInternal(bool toFps, bool isRestoring)
     {
         if (fpcRoot == null || tpcRoot == null) return;
 
@@ -113,6 +144,9 @@ public class SwitchViews : MonoBehaviour
         StarterAssetsInputs oldInput = toFps ? tpcInput : fpcInput;
         StarterAssetsInputs newInput = toFps ? fpcInput : tpcInput;
 
+        // 如果新旧是同一个且已经激活，直接返回，避免重复操作
+        if (oldRoot == newRoot && oldRoot.activeSelf) return;
+
         // 关闭旧的
         if (oldRoot.activeSelf)
         {
@@ -120,22 +154,53 @@ public class SwitchViews : MonoBehaviour
             if (oldInput) ResetInput(oldInput);
         }
 
-        // 计算摄像机对齐 (无缝切换的关键)
-        GetCameraAlignment(oldPlayer, out Vector3 targetPos, out float targetYaw, out float targetPitch);
+        if (isRestoring)
+        {
+            // --- 恢复模式 ---
+            Transform activePlayer = GetActivePlayerTransform();
+            if (activePlayer != null)
+            {
+                // 临时禁用CharacterController以便设置位置 (防止瞬移失效)
+                CharacterController cc = newPlayer.GetComponent<CharacterController>();
+                bool wasEnabled = false;
+                if (cc != null)
+                {
+                    wasEnabled = cc.enabled;
+                    cc.enabled = false;
+                }
 
-        // 应用位置到新角色
-        newPlayer.position = targetPos;
-        newPlayer.rotation = Quaternion.Euler(0, targetYaw, 0);
+                // 还原位置
+                newPlayer.position = GameDate.LastPlayerPosition;
+                newPlayer.rotation = GameDate.LastPlayerRotation;
 
-        // 反射同步内部变量 (如 Cinemachine 的角度)
-        MonoBehaviour targetScript = toFps ? fpcScript : tpcScript;
-        SyncInternalVariables(targetScript, targetYaw, targetPitch);
+                // 还原CC
+                if (cc != null && wasEnabled) cc.enabled = true;
 
-        // 【新增】切换后，确保新角色的移动参数（速度、跳跃）也是最新的
-        // 我们从 SettingPanel 获取当前数据并应用 (如果面板存在)
+                // 同步相机角度
+                MonoBehaviour targetScript = toFps ? fpcScript : tpcScript;
+                SyncCameraRotation(targetScript, GameDate.LastPlayerRotation);
+            }
+        }
+        else
+        {
+            // --- 正常模式：平滑过渡位置 ---
+            GetCameraAlignment(oldPlayer, out Vector3 targetPos, out float targetYaw, out float targetPitch);
+
+            newPlayer.position = targetPos;
+            newPlayer.rotation = Quaternion.Euler(0, targetYaw, 0);
+
+            MonoBehaviour targetScript = toFps ? fpcScript : tpcScript;
+            SyncInternalVariables(targetScript, targetYaw, targetPitch);
+        }
+
+        // 切换后再次强制应用一遍参数，确保速度/灵敏度正确
         if (SettingPanel.Instance != null)
         {
-            ApplySettingsToCharacter(targetScript, SettingPanel.Instance.settingData);
+            UpdateCharacterSettings(
+                SettingPanel.CurrentSettings.moveSpeed,
+                SettingPanel.CurrentSettings.jumpHeight,
+                fixedSensitivity
+            );
         }
 
         // 激活新的
@@ -144,70 +209,39 @@ public class SwitchViews : MonoBehaviour
     }
 
     // =========================================================
-    // 【关键新增】供 SettingPanel 调用的接口：更新物理参数
+    // 参数同步逻辑
     // =========================================================
+
     public void UpdateCharacterSettings(float moveSpeed, float jumpHeight, float sensitivity)
     {
-        // 更新当前正在激活的那个控制器的参数
+        // 只更新当前激活的那个控制器
         MonoBehaviour activeScript = IsInFirstPerson() ? fpcScript : tpcScript;
+
         if (activeScript != null)
         {
-            // 利用反射设置参数
             SetPublicField(activeScript, "MoveSpeed", moveSpeed);
-            SetPublicField(activeScript, "SprintSpeed", moveSpeed * 1.5f); // 跑步速度默认设为走路的1.5倍
+            SetPublicField(activeScript, "SprintSpeed", moveSpeed * 1.5f);
             SetPublicField(activeScript, "JumpHeight", jumpHeight);
 
-            // 灵敏度处理：第一人称直接用，第三人称通常需要放大倍数 (因为官方代码里单位不同)
+            // 灵敏度处理：第三人称通常需要更大的数值倍率
             float rotSpeed = IsInFirstPerson() ? sensitivity : sensitivity * 100f;
             SetPublicField(activeScript, "RotationSpeed", rotSpeed);
-
-            Debug.Log($"SwitchViews: 更新角色设置 - 移动速度: {moveSpeed}, 跳跃高度: {jumpHeight}, 灵敏度: {sensitivity}");
         }
     }
 
-    // 内部辅助：把 SettingData 应用到指定脚本
-    private void ApplySettingsToCharacter(MonoBehaviour script, SettingPanel.SettingDate data)
-    {
-        if (script == null || data == null) return;
-
-        SetPublicField(script, "MoveSpeed", data.moveSpeed);
-        SetPublicField(script, "SprintSpeed", data.moveSpeed * 1.5f);
-        SetPublicField(script, "JumpHeight", data.jumpHeight);
-
-        float rotSpeed = IsInFirstPerson() ? data.mouseXSensitivity : data.mouseXSensitivity * 100f;
-        SetPublicField(script, "RotationSpeed", rotSpeed);
-    }
-
     // =========================================================
-    // 对外接口
+    // 辅助工具方法
     // =========================================================
 
     public bool IsInFirstPerson()
     {
-        if (fpcRoot != null) return fpcRoot.activeSelf;
-        return true;
+        return fpcRoot != null && fpcRoot.activeSelf;
     }
 
     public Transform GetActivePlayerTransform()
     {
-        if (IsInFirstPerson())
-        {
-            return fpcPlayer != null ? fpcPlayer : transform;
-        }
-        else
-        {
-            return tpcPlayer != null ? tpcPlayer : transform;
-        }
+        return IsInFirstPerson() ? (fpcPlayer ? fpcPlayer : transform) : (tpcPlayer ? tpcPlayer : transform);
     }
-
-    public void ForceSwitch(bool toFirstPerson)
-    {
-        SetViewMode(toFirstPerson);
-    }
-
-    // =========================================================
-    // 辅助方法 (反射工具)
-    // =========================================================
 
     private void InitializeComponents()
     {
@@ -240,36 +274,68 @@ public class SwitchViews : MonoBehaviour
         if (pitch > 180) pitch -= 360;
     }
 
+    private void SyncCameraRotation(MonoBehaviour script, Quaternion rotation)
+    {
+        if (script == null) return;
+        float yaw = rotation.eulerAngles.y;
+        float pitch = rotation.eulerAngles.x;
+        if (pitch > 180) pitch -= 360;
+        SyncInternalVariables(script, yaw, pitch);
+    }
+
     private void SyncInternalVariables(MonoBehaviour script, float yaw, float pitch)
     {
         if (script == null) return;
+        // 尝试设置多种可能的变量名
         SetPrivateField(script, "_cinemachineTargetYaw", yaw);
         SetPrivateField(script, "_cinemachineTargetPitch", pitch);
+        SetPrivateField(script, "CinemachineTargetYaw", yaw);
+        SetPrivateField(script, "CinemachineTargetPitch", pitch);
     }
 
-    // 设置私有字段 (用于相机角度)
     private void SetPrivateField(object target, string fieldName, float value)
     {
+        if (target == null) return;
         FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
         if (field != null) field.SetValue(target, value);
     }
 
-    // 【新增】设置公共字段 (用于 MoveSpeed, JumpHeight 等)
-    // 这一步至关重要，因为官方控制器的变量是 Public 的，但我们没有引用它的类，所以用反射写
-    // 修改 SwitchViews.cs 中的 SetPublicField 方法
+    // 【强力修复版】既找Public，也找Private，还找属性，甚至尝试首字母小写
     private void SetPublicField(object target, string fieldName, float value)
     {
         if (target == null) return;
-        FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public);
+
+        // 【关键】这里用到的 Type 类需要 using System; 顶部已添加
+        Type type = target.GetType();
+        BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+        // 1. 尝试找字段 (Field)
+        FieldInfo field = type.GetField(fieldName, flags);
         if (field != null)
         {
             field.SetValue(target, value);
+            return;
         }
-        else
+
+        // 2. 尝试找属性 (Property)
+        PropertyInfo prop = type.GetProperty(fieldName, flags);
+        if (prop != null && prop.CanWrite)
         {
-            // 增加这行日志，如果在控制台看到这个警告，说明官方脚本变量名改了
-            Debug.LogWarning($"[SwitchViews] 警告：在 {target.GetType()} 上找不到变量 {fieldName}，设置失败。");
+            prop.SetValue(target, value);
+            return;
         }
+
+        // 3. 尝试首字母小写 (防变量名变体)
+        string lowerName = char.ToLower(fieldName[0]) + fieldName.Substring(1);
+        FieldInfo lowerField = type.GetField(lowerName, flags);
+        if (lowerField != null)
+        {
+            lowerField.SetValue(target, value);
+            return;
+        }
+
+        // 屏蔽烦人的警告，如果真的找不到就算了，不影响运行
+        // Debug.LogWarning($"[SwitchViews] 未找到变量 {fieldName}"); 
     }
 
     private void ResetInput(StarterAssetsInputs input)

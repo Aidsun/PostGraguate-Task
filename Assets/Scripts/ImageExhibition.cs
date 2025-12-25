@@ -11,7 +11,7 @@ public class ImageExhibition : MonoBehaviour
 
     [Header("解说设置")]
     [Tooltip("是否启用语音解说？")]
-    public bool enableVoiceover = true;
+    public bool enableVoiceover = true; // 开关
     [Tooltip("图片描述音频")]
     public AudioClip artAudioClip;
 
@@ -26,8 +26,10 @@ public class ImageExhibition : MonoBehaviour
     private void Start()
     {
         if (ShowTitle != null) ShowTitle.text = "《" + ImageTitle + "》";
+
         if (ContentCover != null && ImageSprite != null)
         {
+            // 简单设置封面材质
             ContentCover.material.shader = Shader.Find("Unlit/Texture");
             ContentCover.material.mainTexture = ImageSprite.texture;
         }
@@ -41,31 +43,47 @@ public class ImageExhibition : MonoBehaviour
 
     public void StartDisplay()
     {
+        // 1. 打包数据
         GameDate.ImageDate dataPackage = new GameDate.ImageDate();
         dataPackage.Title = this.ImageTitle;
         dataPackage.DescriptionText = this.ImageDescriptionText;
+
+        // 【关键修正】这里统一使用 ImageFile，对应 GameDate 中的定义
         dataPackage.ImageFile = this.ImageSprite;
 
-        // 【核心逻辑】如果开关打开，才传递音频；否则传 null
+        // 音频逻辑
         dataPackage.DescriptionAudio = enableVoiceover ? this.artAudioClip : null;
 
+        // 2. 发送数据
         GameDate.CurrentImageData = dataPackage;
 
-        // --- 保存位置逻辑 (保持不变) ---
+        // 3. 保存当前位置
+        SavePlayerPosition();
+
+        // 4. 跳转场景
+        if (System.Type.GetType("SceneLoding") != null)
+            SceneLoding.LoadLevel(targetSceneName);
+        else
+            SceneManager.LoadScene(targetSceneName);
+    }
+
+    private void SavePlayerPosition()
+    {
         SwitchViews switchScript = FindObjectOfType<SwitchViews>();
         if (switchScript != null)
         {
             Transform activePlayer = switchScript.GetActivePlayerTransform();
+
             GameDate.LastPlayerPosition = activePlayer.position;
             GameDate.LastPlayerRotation = activePlayer.rotation;
-            GameDate.ShouldRestorePosition = true;
-            GameDate.WasFirstPerson = switchScript.IsInFirstPerson();
-        }
-        // -----------------------------
 
-        if (FindObjectOfType<SceneLoding>() != null || System.Type.GetType("SceneLoding") != null)
-            SceneLoding.LoadLevel(targetSceneName);
-        else
-            SceneManager.LoadScene(targetSceneName);
+            // 记录进入时的视角状态
+            GameDate.WasFirstPerson = switchScript.IsInFirstPerson();
+
+            // 【注意】不要在这里设置 ShouldRestorePosition = true
+            // 应该在从图片展示场景返回时设置
+
+            Debug.Log($"图片展品：已保存玩家位置 {activePlayer.position}");
+        }
     }
 }

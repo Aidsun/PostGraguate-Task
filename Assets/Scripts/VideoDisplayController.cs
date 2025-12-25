@@ -7,29 +7,31 @@ using UnityEngine.SceneManagement;
 public class VideoDisplayController : MonoBehaviour
 {
     [Header("核心组件")]
-    public VideoPlayer videoPlayer;   // 拖入场景里的 Video Player
-    public RawImage displayScreen;    // 拖入用来显示视频的 Raw Image
-    public AspectRatioFitter videoFitter; //拖入 Raw Image 上的 AspectRatioFitter 组件
+    public VideoPlayer videoPlayer;       // 场景里的 Video Player
+    public RawImage displayScreen;        // 显示视频的 Raw Image
+    public AspectRatioFitter videoFitter; // 控制比例的组件
 
     [Header("UI 信息绑定")]
-    public TMP_Text titleText;        // 拖入右侧的标题文本
-    public TMP_Text descriptionText;  // 拖入右侧的介绍文本
-    public AudioSource descriptionAudio;
+    public TMP_Text titleText;
+    public TMP_Text descriptionText;
+    public AudioSource descriptionAudio;  // 用于播放解说
 
     [Header("控制按钮")]
-    [Tooltip("暂停按钮")]
+    public Button exitButton;
     public Button pauseButton;
+
+    [Header("设置")]
+    public string returnSceneName = "Museum_Main";
 
     // 内部状态
     private bool isPrepared = false;
-    // 视频音量（从设置面板获取）
     private float currentVideoVolume = 1.0f;
-    // 解说音量（从设置面板获取）
     private float currentDescriptionVolume = 1.0f;
+    private bool isPausedByPanel = false; // 是否因为面板打开而暂停
 
     void Awake()
     {
-        // 注册到设置面板，接收配置更新
+        // 注册设置监听
         if (SettingPanel.Instance != null)
         {
             SettingPanel.RegisterApplyMethod(ApplyCurrentSettings);
@@ -38,7 +40,6 @@ public class VideoDisplayController : MonoBehaviour
 
     void OnDestroy()
     {
-        // 注销设置应用方法
         if (SettingPanel.Instance != null)
         {
             SettingPanel.UnregisterApplyMethod(ApplyCurrentSettings);
@@ -47,135 +48,154 @@ public class VideoDisplayController : MonoBehaviour
 
     void Start()
     {
-        // 应用当前设置
+        // 1. 应用初始设置
         if (SettingPanel.Instance != null)
         {
             ApplyCurrentSettings(SettingPanel.CurrentSettings);
         }
 
-        // 1. 读取全局数据
+        // 2. 读取数据
         var data = GameDate.CurrentVideoDate;
 
         if (data != null)
         {
-            // 设置文字内容
             if (titleText) titleText.text = "《" + data.Title + "》";
             if (descriptionText) descriptionText.text = data.DescriptionText;
 
-            // 设置并播放解说音频
+            // 播放解说
             if (descriptionAudio && data.DescriptionAudio)
             {
                 descriptionAudio.clip = data.DescriptionAudio;
-                descriptionAudio.volume = currentDescriptionVolume; // 应用音量设置
+                descriptionAudio.volume = currentDescriptionVolume;
                 descriptionAudio.Play();
             }
 
-            // 设置视频并准备播放
+            // 准备视频
             if (videoPlayer && data.VideoFile)
             {
                 videoPlayer.clip = data.VideoFile;
-
-                // 监听视频准备完成事件，用于调整宽高比
                 videoPlayer.prepareCompleted += OnVideoPrepared;
-                videoPlayer.Prepare(); // 开始准备
+                videoPlayer.Prepare();
             }
         }
         else
         {
-            Debug.LogError("【错误】没有读取到视频数据，请从浏览馆入口进入！");
+            Debug.LogError("未读取到视频数据！");
         }
 
-        // 增加按钮暂停功能
+        // 3. 绑定按钮
+        if (exitButton) exitButton.onClick.AddListener(OnExitButtonClicked);
         if (pauseButton) pauseButton.onClick.AddListener(TogglePlayPause);
+
+        // 4. 解锁鼠标
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     // 设置应用方法
     private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
     {
-        // 应用视频音量
         currentVideoVolume = settings.videoVolume;
-
-        // 应用解说音量
         currentDescriptionVolume = settings.descriptionVolume;
 
-        // 更新已初始化的音频音量
+        // 更新解说音量
         if (descriptionAudio != null)
         {
             descriptionAudio.volume = currentDescriptionVolume;
         }
 
-        // 更新已初始化的视频音量
+        // 更新视频音量
         if (videoPlayer != null && isPrepared)
         {
             SetVideoPlayerVolume(currentVideoVolume);
         }
-
-        Debug.Log($"VideoDisplayController: 应用设置 - 视频音量: {currentVideoVolume}, 解说音量: {currentDescriptionVolume}");
     }
 
-    // 视频准备好后的回调
     void OnVideoPrepared(VideoPlayer vp)
     {
         isPrepared = true;
-
-        // 设置视频音量
         SetVideoPlayerVolume(currentVideoVolume);
+        vp.Play();
 
-        vp.Play(); // 自动开始播放
-
-        // 【核心】根据视频源的宽高，动态设置 RawImage 的比例
+        // 动态调整比例
         if (videoFitter != null)
         {
-            // 比如 1920/1080 = 1.777
             videoFitter.aspectRatio = (float)vp.width / vp.height;
         }
     }
 
-    // 设置视频播放器音量 - 兼容不同Unity版本的方法
-    private void SetVideoPlayerVolume(float volume)
-    {
-        if (videoPlayer != null)
-        {
-            // 方法1：使用Direct Audio Volume（适用于Direct输出模式）
-            if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
-            {
-                // 设置所有音频轨道的音量
-                for (ushort i = 0; i < videoPlayer.audioTrackCount; i++)
-                {
-                    videoPlayer.SetDirectAudioVolume(i, volume);
-                }
-            }
-        }
-    }
-
-
     void Update()
     {
-        // 监听空格键暂停/继续
+        // 空格键暂停/播放
         if (isPrepared && Input.GetKeyDown(KeyCode.Space))
         {
             TogglePlayPause();
         }
 
-        // 如果设置面板打开，暂停视频播放
-        if (SettingPanel.Instance != null && SettingPanel.Instance.isPanelActive && videoPlayer != null && videoPlayer.isPlaying)
+        // 面板互斥逻辑
+        if (SettingPanel.Instance != null)
         {
-            videoPlayer.Pause();
+            if (SettingPanel.Instance.isPanelActive)
+            {
+                // 面板打开时：强制暂停
+                if (!isPausedByPanel)
+                {
+                    if (videoPlayer.isPlaying) videoPlayer.Pause();
+                    if (descriptionAudio && descriptionAudio.isPlaying) descriptionAudio.Pause();
+                    isPausedByPanel = true;
+                }
+            }
+            else
+            {
+                // 面板关闭后：如果之前是因为面板暂停的，则恢复
+                if (isPausedByPanel)
+                {
+                    if (!videoPlayer.isPlaying) videoPlayer.Play();
+                    // 只有当音频还没播完时才恢复
+                    if (descriptionAudio && !descriptionAudio.isPlaying && descriptionAudio.time > 0)
+                        descriptionAudio.UnPause();
+
+                    isPausedByPanel = false;
+                }
+            }
         }
     }
 
     void TogglePlayPause()
     {
+        if (videoPlayer == null) return;
+
+        if (videoPlayer.isPlaying)
+            videoPlayer.Pause();
+        else
+            videoPlayer.Play();
+    }
+
+    void SetVideoPlayerVolume(float volume)
+    {
         if (videoPlayer != null)
         {
-            if (videoPlayer.isPlaying)
+            // 兼容 Direct 模式
+            for (ushort i = 0; i < videoPlayer.audioTrackCount; i++)
             {
-                videoPlayer.Pause();
-            }
-            else
-            {
-                videoPlayer.Play();
+                videoPlayer.SetDirectAudioVolume(i, volume);
             }
         }
+    }
+
+    void OnExitButtonClicked()
+    {
+        if (videoPlayer) videoPlayer.Stop();
+        if (descriptionAudio) descriptionAudio.Stop();
+
+        // 【核心】标记位置恢复
+        GameDate.ShouldRestorePosition = true;
+        Debug.Log("视频展示：退出并请求位置恢复");
+
+        // 安全跳转
+        if (System.Type.GetType("SceneLoding") != null)
+            SceneLoding.LoadLevel(returnSceneName);
+        else
+            SceneManager.LoadScene(returnSceneName);
     }
 }

@@ -3,50 +3,59 @@ using UnityEngine.Video;
 
 public class GameDate : MonoBehaviour
 {
-    [Tooltip("图片数据类型包")]
+    // ==========================================
+    // 1. 图片展品数据包
+    // ==========================================
     public class ImageDate
     {
-        [Tooltip("图片标题")]
+        [Tooltip("标题")]
         public string Title;
         [Tooltip("图片文件")]
         public Sprite ImageFile;
-        [Tooltip("图片描述文本")]
+        [Tooltip("文字描述")]
         public string DescriptionText;
-        [Tooltip("图片描述配音")]
+        [Tooltip("解说音频")]
         public AudioClip DescriptionAudio;
     }
-    [Tooltip("当前图片数据包")]
+    // 当前选中的图片数据
     public static ImageDate CurrentImageData;
 
-    [Tooltip("视频数据类型包")]
+    // ==========================================
+    // 2. 视频展品数据包
+    // ==========================================
     public class VideoDate
     {
-        [Tooltip("视频标题")]
+        [Tooltip("标题")]
         public string Title;
         [Tooltip("视频文件")]
         public VideoClip VideoFile;
-        [Tooltip("视频描述文本")]
+        [Tooltip("文字描述")]
         public string DescriptionText;
-        [Tooltip("视频描述配音")]
+        [Tooltip("解说音频")]
         public AudioClip DescriptionAudio;
     }
-    [Tooltip("当前视频数据包")]
+    // 当前选中的视频数据
     public static VideoDate CurrentVideoDate;
 
-    [Tooltip("全景视频数据类型包")]
+    // ==========================================
+    // 3. 全景视频数据包
+    // ==========================================
     public class PanoramaDate
     {
-        [Tooltip("全景视频标题")]
+        [Tooltip("标题")]
         public string Title;
         [Tooltip("全景视频文件")]
-        public VideoClip panoramaFile;
-        [Tooltip("全景视频描述配音")]
+        // 【修改】统一命名规范，改为大写开头
+        public VideoClip PanoramaFile;
+        [Tooltip("解说音频")]
         public AudioClip DescriptionAudio;
     }
-    [Tooltip("当前全景视频数据包")]
+    // 当前选中的全景数据
     public static PanoramaDate CurrentPanoramaDate;
 
-    // 高亮颜色数据包
+    // ==========================================
+    // 4. 高亮颜色配置
+    // ==========================================
     public class HighColor
     {
         public Color unActiveColor = Color.blue;
@@ -54,9 +63,15 @@ public class GameDate : MonoBehaviour
     }
     public static HighColor CurrentHighColor;
 
-    // 归档数据
+    // ==========================================
+    // 5. 玩家位置归档 (用于返回展厅时恢复)
+    // ==========================================
     public static Vector3 LastPlayerPosition;
     public static Quaternion LastPlayerRotation;
+
+    // 是否需要恢复位置 (true = 需要恢复, false = 正常出生)
     public static bool ShouldRestorePosition = false;
+
+    // 进入展品前的视角状态 (true = 第一人称, false = 第三人称)
     public static bool WasFirstPerson = true;
 }

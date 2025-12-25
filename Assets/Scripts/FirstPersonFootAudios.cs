@@ -44,14 +44,13 @@ public class FirstPersonFootAudios : MonoBehaviour
 
     void Start()
     {
-        // 初始化获得角色控制组件
+        //初始化获得角色控制组件
         _controller = GetComponent<CharacterController>();
-        // 初始获得音频播放组件
+        //初始获得音频播放组件
         _audioSource = GetComponent<AudioSource>();
 
         // 确保音频源设置正确
-        _audioSource.spatialBlend = 1.0f;
-        // 播放状态默认关闭
+        _audioSource.spatialBlend = 1.0f; // 2D声音，直接入耳
         _audioSource.playOnAwake = false;
 
         // 应用当前设置
@@ -61,34 +60,30 @@ public class FirstPersonFootAudios : MonoBehaviour
         }
     }
 
+    // 设置应用方法
+    private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
+    {
+        volume = settings.footstepVolume;
+        stepDistance = settings.stepDistance;
+
+        Debug.Log($"脚步声: 同步设置 - 音量: {volume}, 步频: {stepDistance}");
+    }
+
     void Update()
     {
         CheckFootsteps();
     }
 
-    // 设置应用方法
-    private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
-    {
-        // 应用脚步音量
-        volume = settings.footstepVolume;
-
-        // 应用步频距离
-        stepDistance = settings.stepDistance;
-
-        Debug.Log($"FirstPersonFootAudios: 应用设置 - 音量: {volume}, 步频距离: {stepDistance}");
-    }
-
     private void CheckFootsteps()
     {
         // 1. 如果角色没有在地面上，或者没有移动，直接返回
-        if (!_controller.isGrounded || _controller.velocity.sqrMagnitude < 0.1f)
+        if (_controller == null || !_controller.isGrounded || _controller.velocity.sqrMagnitude < 0.1f)
         {
             return;
         }
 
         // 2. 累加移动距离
         // 使用 magnitude 获取当前帧移动的距离
-        // Time.deltaTime 已经包含在 velocity 计算中了，这里我们直接取速度*时间=距离
         _distanceTravelled += _controller.velocity.magnitude * Time.deltaTime;
 
         // 3. 达到步频距离，播放声音
@@ -104,35 +99,27 @@ public class FirstPersonFootAudios : MonoBehaviour
     private void PlayFootstepSound()
     {
         // 如果行走音频资源为0，则直接返回，什么都不播放
-        if (footstepClips.Length == 0)
+        if (footstepClips == null || footstepClips.Length == 0)
         {
             return;
         }
-        else
+
+        // 确保索引在有效范围内
+        if (currentClipIndex >= footstepClips.Length)
         {
-            // 确保索引在有效范围内
-            if (currentClipIndex >= footstepClips.Length)
-            {
-                currentClipIndex = 0;
-            }
-
-            // 获取当前要播放的音频
-            AudioClip currentClip = footstepClips[currentClipIndex];
-
-            // 稍微改变音调，让声音听起来不那么机械
-            _audioSource.pitch = Random.Range(0.8f, 1.2f);
-
-            // 使用当前音量设置播放音频
-            _audioSource.PlayOneShot(currentClip, volume);
-
-            // 递增索引，准备播放下一个音频（顺序循环）
-            currentClipIndex++;
-
-            // 如果达到数组末尾，回到开头
-            if (currentClipIndex >= footstepClips.Length)
-            {
-                currentClipIndex = 0;
-            }
+            currentClipIndex = 0;
         }
+
+        // 获取当前要播放的音频
+        AudioClip currentClip = footstepClips[currentClipIndex];
+
+        // 稍微改变音调，让声音听起来不那么机械 (0.9 ~ 1.1 之间随机)
+        _audioSource.pitch = Random.Range(0.9f, 1.1f);
+
+        // 播放一次
+        _audioSource.PlayOneShot(currentClip, volume);
+
+        // 索引+1，为下一次做准备
+        currentClipIndex++;
     }
 }

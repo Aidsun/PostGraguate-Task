@@ -42,14 +42,12 @@ public class PlayerInteraction : MonoBehaviour
         else finalLayerMask = ~0;
 
         // 锁定并隐藏鼠标 (初始化时)
+        // 注意：SwitchViews 也会做这件事，但这里再做一次作为双重保险
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // 检查是否需要恢复玩家位置
-        if (GameDate.ShouldRestorePosition)
-        {
-            RestorePlayerPosition();
-        }
+        // 【关键修改】移除了 RestorePlayerPosition() 调用
+        // 位置恢复工作现在全权交给 SwitchViews.cs 处理，防止逻辑冲突
 
         // 应用当前设置
         if (SettingPanel.Instance != null)
@@ -65,43 +63,6 @@ public class PlayerInteraction : MonoBehaviour
         interactionDistance = settings.interactionDistance;
 
         Debug.Log($"PlayerInteraction: 应用设置 - 交互距离: {interactionDistance}");
-    }
-
-    // 恢复玩家上次浏览馆的位置和视角
-    void RestorePlayerPosition()
-    {
-        Debug.Log($"【正在恢复位置】位置：{GameDate.LastPlayerPosition},视角：{GameDate.LastPlayerRotation}");
-        // 获取 SwitchViews 脚本
-        SwitchViews switchScript = GetComponent<SwitchViews>();
-
-        if (switchScript != null)
-        {
-            // 获取当前激活玩家对象
-            Transform activePlayer = switchScript.GetActivePlayerTransform();
-            CharacterController cc = activePlayer.GetComponent<CharacterController>();
-
-            if (cc != null) cc.enabled = false;
-
-            // 恢复位置和旋转
-            activePlayer.position = GameDate.LastPlayerPosition;
-            activePlayer.rotation = GameDate.LastPlayerRotation;
-
-            // 修正内部视角旋转     
-            float targetYaw = GameDate.LastPlayerRotation.eulerAngles.y;
-            SyncInternalYaw(activePlayer.gameObject, targetYaw);
-
-            Physics.SyncTransforms();
-
-            if (cc != null) cc.enabled = true;
-
-            Debug.Log($"【位置恢复成功！】");
-        }
-        else
-        {
-            Debug.LogError("PlayerInteraction 未能找到 SwitchViews 组件！");
-        }
-        // 标记已恢复
-        GameDate.ShouldRestorePosition = false;
     }
 
     private void Update()
@@ -176,8 +137,6 @@ public class PlayerInteraction : MonoBehaviour
             if (currentItem is PanoramaExhibition pnm) pnm.SetHighlight(true);
 
             lastFrameItem = currentItem;
-            // 可以选择是否一直打印日志，或者只在高亮变化时打印
-            // Debug.Log($"您瞄准了: 《{itemName}》，按下E键或左键可进行交互！");
         }
     }
 
@@ -190,31 +149,6 @@ public class PlayerInteraction : MonoBehaviour
             if (lastFrameItem is VideoExhibition vid) vid.SetHighlight(false);
             if (lastFrameItem is PanoramaExhibition pnm) pnm.SetHighlight(false);
             lastFrameItem = null;
-        }
-    }
-
-    // 同步玩家内部视角旋转（供位置恢复调用）
-    private void SyncInternalYaw(GameObject playerObj, float yaw)
-    {
-        MonoBehaviour controller = null;
-        if (playerObj.GetComponent<FirstPersonController>() != null)
-            controller = playerObj.GetComponent<FirstPersonController>();
-        else if (playerObj.GetComponent<ThirdPersonController>() != null)
-            controller = playerObj.GetComponent<ThirdPersonController>();
-
-        if (controller != null)
-        {
-            // 兼容不同控制器的内部Yaw字段
-            string[] possibleFieldNames = new string[] { "_cinemachineTargetYaw", "CinemachineTargetYaw", "_targetRotation" };
-            foreach (var name in possibleFieldNames)
-            {
-                FieldInfo field = controller.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                if (field != null)
-                {
-                    field.SetValue(controller, yaw);
-                    break;
-                }
-            }
         }
     }
 }

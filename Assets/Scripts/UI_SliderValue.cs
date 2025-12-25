@@ -5,46 +5,67 @@ using TMPro;
 public class UI_SliderValue : MonoBehaviour
 {
     [Header("绑定组件")]
-    public Slider targetSlider;    // 拖入你的 Slider
-    public TMP_Text valueText;     // 拖入你的 Value_Text
+    [Tooltip("如果不拖，会自动查找父物体上的Slider")]
+    public Slider targetSlider;
+    [Tooltip("显示数值的文本框，如果不拖会自动查找")]
+    public TMP_Text valueText;
 
-    [Header("显示格式")]
-    [Tooltip("F0=整数, F1=一位小数, F2=两位小数")]
-    public string numberFormat = "F0";
-    [Tooltip("是否显示百分号? (例如音量需要)")]
+    [Header("显示设置")]
+    [Tooltip("是否显示为百分比? (例如 0.5 显示为 50%)")]
     public bool showPercent = false;
+
+    [Tooltip("数字格式 (F0=整数, F1=1位小数, F2=2位小数)")]
+    public string numberFormat = "F0";
+
+    [Tooltip("前缀 (例如 '音量: ')")]
+    public string prefix = "";
+
+    [Tooltip("后缀 (例如 '%')")]
+    public string suffix = "";
 
     void Start()
     {
-        // 自动查找组件 (如果没拖的话)
+        // 1. 自动查找组件 (智能容错)
         if (targetSlider == null) targetSlider = GetComponentInParent<Slider>();
         if (valueText == null) valueText = GetComponent<TMP_Text>();
 
+        // 2. 初始化监听
         if (targetSlider != null)
         {
-            // 1. 初始化显示
+            // 初始化显示一次
             UpdateText(targetSlider.value);
 
-            // 2. 监听数值变化 (当滑块动的时候，自动调用 UpdateText)
+            // 监听数值变化 (当滑块拖动时实时更新)
+            targetSlider.onValueChanged.RemoveAllListeners();
             targetSlider.onValueChanged.AddListener(UpdateText);
+        }
+        else
+        {
+            Debug.LogWarning($"UI_SliderValue: 在 {gameObject.name} 上没找到 Slider 组件！");
         }
     }
 
     // 更新文本的核心方法
     public void UpdateText(float val)
     {
-        if (valueText != null)
+        if (valueText == null) return;
+
+        if (showPercent)
         {
-            if (showPercent)
-            {
-                // 如果是百分比模式 (0~1 显示为 0%~100%)
-                valueText.text = Mathf.RoundToInt(val * 100) + "%";
-            }
-            else
-            {
-                // 普通数值模式
-                valueText.text = val.ToString(numberFormat);
-            }
+            // 百分比模式：0.5 -> 50
+            int percent = Mathf.RoundToInt(val * 100);
+            valueText.text = $"{prefix}{percent}{suffix}";
         }
+        else
+        {
+            // 普通数字模式：直接显示数值
+            valueText.text = $"{prefix}{val.ToString(numberFormat)}{suffix}";
+        }
+    }
+
+    // 供外部强制刷新的方法
+    public void ForceRefresh()
+    {
+        if (targetSlider != null) UpdateText(targetSlider.value);
     }
 }
