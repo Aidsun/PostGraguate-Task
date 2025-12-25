@@ -27,7 +27,10 @@ public class VideoExhibition : MonoBehaviour
 
     private void Start()
     {
+        // 设置标题
         if (ShowTitle != null) ShowTitle.text = "《" + VideoTitle + "》";
+
+        // 设置封面
         if (ContentCover != null && VideoCover != null)
         {
             ContentCover.material.shader = Shader.Find("Unlit/Texture");
@@ -48,7 +51,7 @@ public class VideoExhibition : MonoBehaviour
         dataPackage.DescriptionText = this.VideoDescriptionText;
         dataPackage.VideoFile = this.VideoFile;
 
-        // 【核心逻辑】开关控制音频
+        // 【核心逻辑】如果开关打开，才传递音频；否则传 null
         dataPackage.DescriptionAudio = enableVoiceover ? this.artAudioClip : null;
 
         GameDate.CurrentVideoDate = dataPackage;

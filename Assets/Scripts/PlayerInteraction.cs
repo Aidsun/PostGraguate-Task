@@ -5,7 +5,7 @@ using System.Reflection;
 public class PlayerInteraction : MonoBehaviour
 {
     [Header("交互设置")]
-    [Tooltip("交互距离，默认为10")]
+    [Tooltip("交互距离，默认为10（默认值，会被设置面板覆盖）")]
     public float interactionDistance = 10.0f;
 
     // 忽略玩家层名称（防止射线检测到自己）
@@ -14,6 +14,24 @@ public class PlayerInteraction : MonoBehaviour
     private int finalLayerMask;
     // 上一帧被高亮的展品脚本
     private MonoBehaviour lastFrameItem;
+
+    void Awake()
+    {
+        // 注册到设置面板，接收配置更新
+        if (SettingPanel.Instance != null)
+        {
+            SettingPanel.RegisterApplyMethod(ApplyCurrentSettings);
+        }
+    }
+
+    void OnDestroy()
+    {
+        // 注销设置应用方法
+        if (SettingPanel.Instance != null)
+        {
+            SettingPanel.UnregisterApplyMethod(ApplyCurrentSettings);
+        }
+    }
 
     private void Start()
     {
@@ -32,6 +50,21 @@ public class PlayerInteraction : MonoBehaviour
         {
             RestorePlayerPosition();
         }
+
+        // 应用当前设置
+        if (SettingPanel.Instance != null)
+        {
+            ApplyCurrentSettings(SettingPanel.CurrentSettings);
+        }
+    }
+
+    // 设置应用方法
+    private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
+    {
+        // 应用交互距离
+        interactionDistance = settings.interactionDistance;
+
+        Debug.Log($"PlayerInteraction: 应用设置 - 交互距离: {interactionDistance}");
     }
 
     // 恢复玩家上次浏览馆的位置和视角
@@ -86,7 +119,7 @@ public class PlayerInteraction : MonoBehaviour
         Camera mainCam = Camera.main;
         if (mainCam == null) return;
 
-        // 从屏幕中心发射射线
+        // 从屏幕中心发射射线（使用当前的交互距离）
         Ray ray = mainCam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         RaycastHit hit;
 

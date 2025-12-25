@@ -15,8 +15,11 @@ public class SwitchViews : MonoBehaviour
     public Transform tpcCameraRoot;
 
     [Header("快捷键设置")]
+    [Tooltip("视角切换快捷键（默认值，会被设置面板覆盖）")]
     public KeyCode switchKey = KeyCode.T;
+
     [Header("默认第一视角")]
+    [Tooltip("是否默认第一人称视角（默认值，会被设置面板覆盖）")]
     public bool startInFirstPerson = true;
 
     // 缓存组件引用
@@ -25,6 +28,12 @@ public class SwitchViews : MonoBehaviour
 
     void Awake()
     {
+        // 注册到设置面板，接收配置更新
+        if (SettingPanel.Instance != null)
+        {
+            SettingPanel.RegisterApplyMethod(ApplyCurrentSettings);
+        }
+
         InitializeComponents();
 
         // 1. 先关闭 Input，防止抢夺控制
@@ -34,6 +43,24 @@ public class SwitchViews : MonoBehaviour
         // 锁定鼠标
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    void OnDestroy()
+    {
+        // 注销设置应用方法
+        if (SettingPanel.Instance != null)
+        {
+            SettingPanel.UnregisterApplyMethod(ApplyCurrentSettings);
+        }
+    }
+
+    void Start()
+    {
+        // 应用当前设置
+        if (SettingPanel.Instance != null)
+        {
+            ApplyCurrentSettings(SettingPanel.CurrentSettings);
+        }
 
         // ------------------ 【核心逻辑：开局定胜负】 ------------------
         // 优先检查是否有存档的恢复请求 (GameDate)
@@ -51,12 +78,27 @@ public class SwitchViews : MonoBehaviour
 
     void Update()
     {
-        // 监听按键切换
+        // 监听按键切换（使用当前设置的按键）
         if (Input.GetKeyDown(switchKey))
         {
             // 取反：当前是第一人称，就切第三，反之亦然
             SetViewMode(!IsInFirstPerson());
         }
+    }
+
+    // 设置应用方法
+    private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
+    {
+        // 应用视角切换快捷键
+        switchKey = settings.viewSwitchKey;
+
+        // 应用默认视角设置
+        startInFirstPerson = settings.defaultFirstPersonView;
+
+        // 应用角色控制参数
+        UpdateCharacterSettings(settings.moveSpeed, settings.jumpHeight, settings.mouseXSensitivity);
+
+        Debug.Log($"SwitchViews: 应用设置 - 切换键: {switchKey}, 默认视角: {startInFirstPerson}");
     }
 
     // --- 核心切换逻辑 ---
@@ -118,6 +160,8 @@ public class SwitchViews : MonoBehaviour
             // 灵敏度处理：第一人称直接用，第三人称通常需要放大倍数 (因为官方代码里单位不同)
             float rotSpeed = IsInFirstPerson() ? sensitivity : sensitivity * 100f;
             SetPublicField(activeScript, "RotationSpeed", rotSpeed);
+
+            Debug.Log($"SwitchViews: 更新角色设置 - 移动速度: {moveSpeed}, 跳跃高度: {jumpHeight}, 灵敏度: {sensitivity}");
         }
     }
 

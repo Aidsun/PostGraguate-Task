@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c9100b48824872488fa0bcfd2cf50d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isPanelActive: 0
   panelRoot: {fileID: 8239762644997300483}
   viewKeyDropdown: {fileID: 1759273776601390854}
   callPanelDropdown: {fileID: 8424920243799461514}
@@ -63,10 +64,10 @@ MonoBehaviour:
   loadingTimeInput: {fileID: 6222841659416773296}
   loopCountInput: {fileID: 4794770213092666872}
   saveButton: {fileID: 5826209882223833335}
-  continueButton: {fileID: 5138954581374425283}
   exitButton: {fileID: 3813441308703584201}
-  startSceneName: StartScene
+  startSceneName: StartGame
   mainSceneName: Museum_Main
+  loadingSceneName: LoadingScene
   settingData:
     viewSwitchKey: 116
     callSettingPanelKey: 27
@@ -83,7 +84,7 @@ MonoBehaviour:
     descriptionVolume: 1
     buttonVolume: 1
     loadingTime: 5
-    startGameVideoLoopCount: 5
+    startGameVideoLoopCount: 1
 --- !u!1001 &3255395765203747422
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2174,7 +2175,8 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 277074587865818442, guid: 1f06303495b0b944285739177a0ff090, type: 3}
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 1897215410711752824, guid: 1f06303495b0b944285739177a0ff090, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1f06303495b0b944285739177a0ff090, type: 3}
@@ -2302,17 +2304,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &5138954581374425283 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7673085680275659421, guid: 1f06303495b0b944285739177a0ff090, type: 3}
-  m_PrefabInstance: {fileID: 3255395765203747422}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &5826209882223833335 stripped

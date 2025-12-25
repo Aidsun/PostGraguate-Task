@@ -3,20 +3,28 @@
   "WorkspaceRootPath": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\playerinteraction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\playerinteraction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\settingpanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\settingpanel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\ui_slidervalue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui_slidervalue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\panoramadisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\panoramadisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{ABA698E2-FAD1-500B-8854-FF402E7A0252}|Assembly-CSharp-Editor.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\editor\\bootstrapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{ABA698E2-FAD1-500B-8854-FF402E7A0252}|Assembly-CSharp-Editor.csproj|solutionrelative:assets\\scripts\\editor\\bootstrapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\assets\\scripts\\switchviews.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\switchviews.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\assets\\scripts\\ui_slidervalue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui_slidervalue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\assets\\scripts\\panoramadisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\panoramadisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\assets\\scripts\\videodisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -38,11 +46,37 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
+              "Title": "PlayerInteraction.cs",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\PlayerInteraction.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\PlayerInteraction.cs",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\PlayerInteraction.cs",
+              "RelativeToolTip": "Assets\\Scripts\\PlayerInteraction.cs",
+              "ViewState": "AgIAAKMAAAAAAAAAAAAywLoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-24T15:18:33.508Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Bootstrapper.cs",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\Editor\\Bootstrapper.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Editor\\Bootstrapper.cs",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\Editor\\Bootstrapper.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Editor\\Bootstrapper.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAQwCQAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-24T14:40:02.068Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "UI_SliderValue.cs",
               "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\UI_SliderValue.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI_SliderValue.cs",
@@ -50,12 +84,11 @@
               "RelativeToolTip": "Assets\\Scripts\\UI_SliderValue.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-24T11:56:33.251Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-24T11:56:33.251Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "PanoramaDisplayController.cs",
               "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\PanoramaDisplayController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\PanoramaDisplayController.cs",
@@ -63,8 +96,7 @@
               "RelativeToolTip": "Assets\\Scripts\\PanoramaDisplayController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-24T11:56:13.322Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-24T11:56:13.322Z"
             },
             {
               "$type": "Document",
@@ -74,26 +106,27 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\SwitchViews.cs",
               "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\SwitchViews.cs",
               "RelativeToolTip": "Assets\\Scripts\\SwitchViews.cs",
-              "ViewState": "AgIAAI8AAAAAAAAAAAAswA8AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAQwN4AAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-24T08:48:39.196Z"
+              "WhenOpened": "2025-12-24T08:48:39.196Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "SettingPanel.cs",
               "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\SettingPanel.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\SettingPanel.cs",
               "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\SettingPanel.cs",
               "RelativeToolTip": "Assets\\Scripts\\SettingPanel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADIBAAABAAAAAAAAAA==",
+              "ViewState": "AgIAADUBAAAAAAAAAAAswEIBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-24T07:35:13.587Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "VideoDisplayController.cs",
               "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\VideoDisplayController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\VideoDisplayController.cs",
@@ -105,7 +138,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "GameDate.cs",
               "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\GameDate.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\GameDate.cs",
@@ -117,7 +150,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "StartGame.cs",
               "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\StartGame.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\StartGame.cs",

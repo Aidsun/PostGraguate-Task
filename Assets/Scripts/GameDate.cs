@@ -3,33 +3,47 @@ using UnityEngine.Video;
 
 public class GameDate : MonoBehaviour
 {
-    // 图片数据包
+    [Tooltip("图片数据类型包")]
     public class ImageDate
     {
+        [Tooltip("图片标题")]
         public string Title;
+        [Tooltip("图片文件")]
+        public Sprite ImageFile;
+        [Tooltip("图片描述文本")]
         public string DescriptionText;
-        public Sprite ImageShow;
+        [Tooltip("图片描述配音")]
         public AudioClip DescriptionAudio;
     }
+    [Tooltip("当前图片数据包")]
     public static ImageDate CurrentImageData;
 
-    // 视频数据包
+    [Tooltip("视频数据类型包")]
     public class VideoDate
     {
+        [Tooltip("视频标题")]
         public string Title;
+        [Tooltip("视频文件")]
         public VideoClip VideoFile;
+        [Tooltip("视频描述文本")]
         public string DescriptionText;
+        [Tooltip("视频描述配音")]
         public AudioClip DescriptionAudio;
     }
+    [Tooltip("当前视频数据包")]
     public static VideoDate CurrentVideoDate;
 
-    // 全景视频数据包
+    [Tooltip("全景视频数据类型包")]
     public class PanoramaDate
     {
+        [Tooltip("全景视频标题")]
         public string Title;
+        [Tooltip("全景视频文件")]
         public VideoClip panoramaFile;
-        public AudioClip DescriptionAudio; // 【新增】补上音频槽位
+        [Tooltip("全景视频描述配音")]
+        public AudioClip DescriptionAudio;
     }
+    [Tooltip("当前全景视频数据包")]
     public static PanoramaDate CurrentPanoramaDate;
 
     // 高亮颜色数据包

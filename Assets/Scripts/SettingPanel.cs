@@ -13,6 +13,16 @@ public class SettingPanel : MonoBehaviour
     // ==========================================================
     public static SettingPanel Instance;
 
+    //事件委托：当设置更改时通知其他脚本
+    public delegate void OnSettingChangedDelegate(SettingDate newSettings);
+    public static event OnSettingChangedDelegate OnSettingsChanged;
+
+    //委托定义：应用设置的函数类型
+    public delegate void ApplySettingDelegate(SettingDate settings);
+
+    //注册表：存储其他脚本需要应用设置的方法
+    private static List<ApplySettingDelegate> applyDelegates = new List<ApplySettingDelegate>();
+
     // 公开这个状态，让 PlayerInteraction 等脚本可以读取，防止误触
     [HideInInspector]
     public bool isPanelActive = false;
@@ -47,14 +57,13 @@ public class SettingPanel : MonoBehaviour
     public TMP_InputField loadingTimeInput; // 加载最小等待时间
     public TMP_InputField loopCountInput;   // 视频循环次数
 
-    [Header("=== 🔘 底部三大金刚 ===")]
+    [Header("=== 🔘 底部按钮 ===")]
     public Button saveButton;       // 保存设置
-    public Button continueButton;   // 继续游戏 (关闭面板)
     public Button exitButton;       // 退出体验
 
     [Header("=== ⚙️ 场景配置 ===")]
     [Tooltip("开始场景的名字 (在此场景点击退出 -> 关闭游戏)")]
-    public string startSceneName = "StartScene";
+    public string startSceneName = "StartGame";
     [Tooltip("浏览馆主场景的名字 (在此场景点击退出 -> 回开始界面)")]
     public string mainSceneName = "Museum_Main";
     [Tooltip("加载场景的名字 (在此场景无法呼出面板)")]
@@ -86,9 +95,17 @@ public class SettingPanel : MonoBehaviour
         public float descriptionVolume = 1f;
         public float buttonVolume = 1f;
         public float loadingTime = 5f;
-        public int startGameVideoLoopCount = 5;
+        public int startGameVideoLoopCount = 2;
     }
     public SettingDate settingData = new SettingDate();
+
+
+    //公共属性：让其他脚本可以直接读取当前设置（只读）
+    public static SettingDate CurrentSettings
+    {
+        get { return Instance != null ? Instance.settingData : new SettingDate(); }
+    }
+
 
     // 预定义的按键列表 (用于 Dropdown)
     private readonly List<KeyCode> dropdownKeys = new List<KeyCode>()
@@ -123,8 +140,8 @@ public class SettingPanel : MonoBehaviour
         {
             SwitchSettingPanel(false);
         }
-        // 稍微延迟一下同步数据，等待场景物体初始化
-        Invoke("ApplySettingsToGame", 0.1f);
+        // 【新增】场景加载后自动应用设置到新场景中的对象
+        Invoke("NotifySettingsChanged", 0.1f);
     }
 
     private void Start()
@@ -136,7 +153,7 @@ public class SettingPanel : MonoBehaviour
         LoadSettings();       // 读取存档
         InitUIValues();       // 刷新UI显示
         BindUIEvents();       // 绑定事件
-        ApplySettingsToGame(); // 应用到游戏
+        NotifySettingsChanged(); // 【修改】改为通知所有注册对象
     }
 
     private void Update()
@@ -152,7 +169,77 @@ public class SettingPanel : MonoBehaviour
     }
 
     // ==========================================================
-    // 5. 面板开关与暂停核心逻辑
+    // 5. 核心接口：供其他脚本注册和获取设置
+    // ==========================================================
+
+    /// <summary>
+    /// 注册一个应用设置的回调函数
+    /// 其他脚本可以在 Awake 或 Start 中调用此方法来注册
+    /// </summary>
+    public static void RegisterApplyMethod(ApplySettingDelegate applyMethod)
+    {
+        if (!applyDelegates.Contains(applyMethod))
+        {
+            applyDelegates.Add(applyMethod);
+
+            // 立即应用当前设置到新注册的对象
+            if (Instance != null)
+            {
+                applyMethod(Instance.settingData);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 取消注册应用设置的回调函数
+    /// 脚本在 OnDestroy 时应该调用此方法
+    /// </summary>
+    public static void UnregisterApplyMethod(ApplySettingDelegate applyMethod)
+    {
+        if (applyDelegates.Contains(applyMethod))
+        {
+            applyDelegates.Remove(applyMethod);
+        }
+    }
+
+    /// <summary>
+    /// 手动触发设置应用（供UI事件调用）
+    /// </summary>
+    private void NotifySettingsChanged()
+    {
+        // 触发事件
+        if (OnSettingsChanged != null)
+        {
+            OnSettingsChanged(settingData);
+        }
+
+        // 调用所有注册的委托
+        foreach (var applyMethod in applyDelegates.ToList()) // 使用副本防止修改时出错
+        {
+            try
+            {
+                applyMethod(settingData);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"应用设置时出错: {e.Message}");
+            }
+        }
+
+        // 兼容旧代码：调用原有的 ApplySettingsToGame
+        ApplySettingsToGame();
+    }
+
+    /// <summary>
+    /// 强制刷新所有设置（供外部调用）
+    /// </summary>
+    public void ForceRefreshSettings()
+    {
+        NotifySettingsChanged();
+    }
+
+    // ==========================================================
+    // 6. 面板开关与暂停核心逻辑
     // ==========================================================
     public void SwitchSettingPanel(bool isOpen)
     {
@@ -202,7 +289,7 @@ public class SettingPanel : MonoBehaviour
     }
 
     // ==========================================================
-    // 6. 智能退出逻辑 (Exit Button)
+    // 7. 智能退出逻辑 (Exit Button)
     // ==========================================================
     public void OnExitButton()
     {
@@ -248,7 +335,7 @@ public class SettingPanel : MonoBehaviour
     }
 
     // ==========================================================
-    // 7. 初始化 UI 显示 (InitUIValues)
+    // 8. 初始化 UI 显示 (InitUIValues)
     // ==========================================================
     private void InitUIValues()
     {
@@ -276,49 +363,111 @@ public class SettingPanel : MonoBehaviour
     }
 
     // ==========================================================
-    // 8. 绑定 UI 事件 (BindUIEvents)
+    // 9. 绑定 UI 事件 (BindUIEvents)
     // ==========================================================
     private void BindUIEvents()
     {
         // Slider 事件
-        if (mouseXSlider) mouseXSlider.onValueChanged.AddListener((v) => { settingData.mouseXSensitivity = v; ApplySettingsToGame(); });
-        if (mouseYSlider) mouseYSlider.onValueChanged.AddListener((v) => { settingData.mouseYSensitivity = v; ApplySettingsToGame(); });
-        if (footstepVolumeSlider) footstepVolumeSlider.onValueChanged.AddListener((v) => { settingData.footstepVolume = v; ApplySettingsToGame(); });
+        if (mouseXSlider) mouseXSlider.onValueChanged.AddListener((v) => {
+            settingData.mouseXSensitivity = v;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
+        if (mouseYSlider) mouseYSlider.onValueChanged.AddListener((v) => {
+            settingData.mouseYSensitivity = v;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
+        if (footstepVolumeSlider) footstepVolumeSlider.onValueChanged.AddListener((v) => {
+            settingData.footstepVolume = v;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
 
-        if (bgmVolumeSlider) bgmVolumeSlider.onValueChanged.AddListener((v) => { settingData.bgmVolume = v; ApplySettingsToGame(); });
-        if (videoVolumeSlider) videoVolumeSlider.onValueChanged.AddListener((v) => { settingData.videoVolume = v; ApplySettingsToGame(); });
-        if (descriptionVolumeSlider) descriptionVolumeSlider.onValueChanged.AddListener((v) => { settingData.descriptionVolume = v; ApplySettingsToGame(); });
-        if (buttonVolumeSlider) buttonVolumeSlider.onValueChanged.AddListener((v) => { settingData.buttonVolume = v; ApplySettingsToGame(); });
+        if (bgmVolumeSlider) bgmVolumeSlider.onValueChanged.AddListener((v) => {
+            settingData.bgmVolume = v;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
+        if (videoVolumeSlider) videoVolumeSlider.onValueChanged.AddListener((v) => {
+            settingData.videoVolume = v;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
+        if (descriptionVolumeSlider) descriptionVolumeSlider.onValueChanged.AddListener((v) => {
+            settingData.descriptionVolume = v;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
+        if (buttonVolumeSlider) buttonVolumeSlider.onValueChanged.AddListener((v) => {
+            settingData.buttonVolume = v;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
 
         // Toggle 事件
-        if (defaultViewToggle) defaultViewToggle.onValueChanged.AddListener((isOn) => { settingData.defaultFirstPersonView = isOn; ApplySettingsToGame(); });
+        if (defaultViewToggle) defaultViewToggle.onValueChanged.AddListener((isOn) => {
+            settingData.defaultFirstPersonView = isOn;
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
 
         // InputField 事件 (使用 onEndEdit 避免频繁调用)
-        if (moveSpeedInput) moveSpeedInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) { settingData.moveSpeed = v; ApplySettingsToGame(); } });
-        if (jumpHeightInput) jumpHeightInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) { settingData.jumpHeight = v; ApplySettingsToGame(); } });
-        if (interactionDistInput) interactionDistInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) { settingData.interactionDistance = v; ApplySettingsToGame(); } });
-        if (stepDistInput) stepDistInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) { settingData.stepDistance = v; ApplySettingsToGame(); } });
+        if (moveSpeedInput) moveSpeedInput.onEndEdit.AddListener((str) => {
+            if (float.TryParse(str, out float v))
+            {
+                settingData.moveSpeed = v;
+                NotifySettingsChanged(); // 【修改】替换为通知
+            }
+        });
+        if (jumpHeightInput) jumpHeightInput.onEndEdit.AddListener((str) => {
+            if (float.TryParse(str, out float v))
+            {
+                settingData.jumpHeight = v;
+                NotifySettingsChanged(); // 【修改】替换为通知
+            }
+        });
+        if (interactionDistInput) interactionDistInput.onEndEdit.AddListener((str) => {
+            if (float.TryParse(str, out float v))
+            {
+                settingData.interactionDistance = v;
+                NotifySettingsChanged(); // 【修改】替换为通知
+            }
+        });
+        if (stepDistInput) stepDistInput.onEndEdit.AddListener((str) => {
+            if (float.TryParse(str, out float v))
+            {
+                settingData.stepDistance = v;
+                NotifySettingsChanged(); // 【修改】替换为通知
+            }
+        });
 
-        if (loadingTimeInput) loadingTimeInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) { settingData.loadingTime = v; ApplySettingsToGame(); } });
-        if (loopCountInput) loopCountInput.onEndEdit.AddListener((str) => { if (int.TryParse(str, out int v)) { settingData.startGameVideoLoopCount = v; ApplySettingsToGame(); } });
+        if (loadingTimeInput) loadingTimeInput.onEndEdit.AddListener((str) => {
+            if (float.TryParse(str, out float v))
+            {
+                settingData.loadingTime = v;
+                NotifySettingsChanged(); // 【修改】替换为通知
+            }
+        });
+        if (loopCountInput) loopCountInput.onEndEdit.AddListener((str) => {
+            if (int.TryParse(str, out int v))
+            {
+                settingData.startGameVideoLoopCount = v;
+                NotifySettingsChanged(); // 【修改】替换为通知
+            }
+        });
 
         // Dropdown 事件
-        if (viewKeyDropdown) viewKeyDropdown.onValueChanged.AddListener((idx) => { settingData.viewSwitchKey = dropdownKeys[idx]; ApplySettingsToGame(); });
-        if (callPanelDropdown) callPanelDropdown.onValueChanged.AddListener((idx) => { settingData.callSettingPanelKey = dropdownKeys[idx]; ApplySettingsToGame(); });
+        if (viewKeyDropdown) viewKeyDropdown.onValueChanged.AddListener((idx) => {
+            settingData.viewSwitchKey = dropdownKeys[idx];
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
+        if (callPanelDropdown) callPanelDropdown.onValueChanged.AddListener((idx) => {
+            settingData.callSettingPanelKey = dropdownKeys[idx];
+            NotifySettingsChanged(); // 【修改】替换为通知
+        });
 
         // 按钮事件
         // 1. 保存设置
         if (saveButton)
         {
             saveButton.onClick.RemoveAllListeners();
-            saveButton.onClick.AddListener(() => { SaveSettings(); ApplySettingsToGame(); });
-        }
-
-        // 2. 继续游戏
-        if (continueButton)
-        {
-            continueButton.onClick.RemoveAllListeners();
-            continueButton.onClick.AddListener(() => SwitchSettingPanel(false));
+            saveButton.onClick.AddListener(() => {
+                SaveSettings();
+                NotifySettingsChanged(); // 【修改】替换为通知
+            });
         }
 
         // 3. 退出体验 (绑定到 OnExitButton)
@@ -330,7 +479,7 @@ public class SettingPanel : MonoBehaviour
     }
 
     // ==========================================================
-    // 9. 应用数据到游戏 (ApplySettingsToGame)
+    // 10. 应用数据到游戏 (ApplySettingsToGame) - 保留原有逻辑
     // ==========================================================
     public void ApplySettingsToGame()
     {
@@ -393,7 +542,7 @@ public class SettingPanel : MonoBehaviour
     }
 
     // ==========================================================
-    // 10. 存档系统 (Save & Load)
+    // 11. 存档系统 (Save & Load)
     // ==========================================================
     public void SaveSettings()
     {

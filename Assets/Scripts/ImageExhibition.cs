@@ -11,7 +11,7 @@ public class ImageExhibition : MonoBehaviour
 
     [Header("解说设置")]
     [Tooltip("是否启用语音解说？")]
-    public bool enableVoiceover = true; // 【新增】开关
+    public bool enableVoiceover = true;
     [Tooltip("图片描述音频")]
     public AudioClip artAudioClip;
 
@@ -26,7 +26,7 @@ public class ImageExhibition : MonoBehaviour
     private void Start()
     {
         if (ShowTitle != null) ShowTitle.text = "《" + ImageTitle + "》";
-        if (ContentCover != null)
+        if (ContentCover != null && ImageSprite != null)
         {
             ContentCover.material.shader = Shader.Find("Unlit/Texture");
             ContentCover.material.mainTexture = ImageSprite.texture;
@@ -44,7 +44,7 @@ public class ImageExhibition : MonoBehaviour
         GameDate.ImageDate dataPackage = new GameDate.ImageDate();
         dataPackage.Title = this.ImageTitle;
         dataPackage.DescriptionText = this.ImageDescriptionText;
-        dataPackage.ImageShow = this.ImageSprite;
+        dataPackage.ImageFile = this.ImageSprite;
 
         // 【核心逻辑】如果开关打开，才传递音频；否则传 null
         dataPackage.DescriptionAudio = enableVoiceover ? this.artAudioClip : null;
