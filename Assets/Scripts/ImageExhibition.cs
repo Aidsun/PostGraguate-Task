@@ -1,89 +1,65 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using TMPro;
 
 public class ImageExhibition : MonoBehaviour
 {
-    [Header("图片展品信息")]
-    public string ImageTitle;
-    public Sprite ImageSprite;
-    [TextArea(5, 10)] public string ImageDescriptionText;
+    [Header("数据配置")]
+    public string Title;
+    public Sprite ImageContent;
+    [TextArea] public string Description;
+    public bool EnableVoice = true;
+    public AudioClip VoiceClip;
 
-    [Header("解说设置")]
-    [Tooltip("是否启用语音解说？")]
-    public bool enableVoiceover = true; // 开关
-    [Tooltip("图片描述音频")]
-    public AudioClip artAudioClip;
+    [Header("组件")]
+    public Renderer CoverRenderer;
+    public Renderer OutlineRenderer;
+    public TMP_Text TitleLabel;
 
-    [Header("组件设置")]
-    public Renderer ContentCover;
-    public Renderer outlineRenderer;
-    public TMP_Text ShowTitle;
-
-    [Header("跳转目标场景")]
-    public string targetSceneName = "ImageContent";
-
-    private void Start()
+    void Start()
     {
-        if (ShowTitle != null) ShowTitle.text = "《" + ImageTitle + "》";
-
-        if (ContentCover != null && ImageSprite != null)
+        if (TitleLabel) TitleLabel.text = Title;
+        if (CoverRenderer && ImageContent)
         {
-            // 简单设置封面材质
-            ContentCover.material.shader = Shader.Find("Unlit/Texture");
-            ContentCover.material.mainTexture = ImageSprite.texture;
+            CoverRenderer.material.mainTexture = ImageContent.texture;
         }
     }
 
-    public void SetHighlight(bool isActive)
+    public void SetHighlight(bool active)
     {
-        if (outlineRenderer != null)
-            outlineRenderer.material.color = isActive ? Color.blue : Color.white;
+        if (OutlineRenderer && GameData.Instance)
+            OutlineRenderer.material.color = active ? GameData.Instance.HighlightColor : Color.white;
     }
 
     public void StartDisplay()
     {
-        // 1. 打包数据
-        GameDate.ImageDate dataPackage = new GameDate.ImageDate();
-        dataPackage.Title = this.ImageTitle;
-        dataPackage.DescriptionText = this.ImageDescriptionText;
+        // 1. 保存当前状态 (位置/视角)
+        SaveState();
 
-        // 【关键修正】这里统一使用 ImageFile，对应 GameDate 中的定义
-        dataPackage.ImageFile = this.ImageSprite;
+        // 2. 打包数据
+        GameData.ImagePacket packet = new GameData.ImagePacket();
+        packet.Title = this.Title;
+        packet.ImageContent = this.ImageContent;
+        packet.Description = this.Description;
+        packet.AutoPlayVoice = this.EnableVoice;
+        packet.VoiceClip = this.VoiceClip;
 
-        // 音频逻辑
-        dataPackage.DescriptionAudio = enableVoiceover ? this.artAudioClip : null;
+        // 3. 存入全局
+        GameData.CurrentImage = packet;
 
-        // 2. 发送数据
-        GameDate.CurrentImageData = dataPackage;
-
-        // 3. 保存当前位置
-        SavePlayerPosition();
-
-        // 4. 跳转场景
-        if (System.Type.GetType("SceneLoding") != null)
-            SceneLoding.LoadLevel(targetSceneName);
-        else
-            SceneManager.LoadScene(targetSceneName);
+        // 4. 跳转
+        SceneLoading.LoadLevel("ImageContent"); // 确保您的场景名是这个
     }
 
-    private void SavePlayerPosition()
+    private void SaveState()
     {
-        SwitchViews switchScript = FindObjectOfType<SwitchViews>();
-        if (switchScript != null)
+        // 找到 SwitchViews 脚本来获取玩家位置
+        SwitchViews sv = FindObjectOfType<SwitchViews>();
+        if (sv && GameData.Instance)
         {
-            Transform activePlayer = switchScript.GetActivePlayerTransform();
-
-            GameDate.LastPlayerPosition = activePlayer.position;
-            GameDate.LastPlayerRotation = activePlayer.rotation;
-
-            // 记录进入时的视角状态
-            GameDate.WasFirstPerson = switchScript.IsInFirstPerson();
-
-            // 【注意】不要在这里设置 ShouldRestorePosition = true
-            // 应该在从图片展示场景返回时设置
-
-            Debug.Log($"图片展品：已保存玩家位置 {activePlayer.position}");
+            Transform p = sv.GetActivePlayerTransform();
+            GameData.Instance.LastPlayerPosition = p.position;
+            GameData.Instance.LastPlayerRotation = p.rotation;
+            GameData.Instance.WasFirstPerson = sv.IsInFirstPerson();
         }
     }
 }

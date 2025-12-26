@@ -1,114 +1,58 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class ImageDisplayController : MonoBehaviour
 {
-    [Header("UI 组件绑定")]
-    public TMP_Text imageTitle;
-    public Image imageShow;
-    public TMP_Text imageDescription;
+    [Header("组件绑定")]
+    public TMP_Text titleText;
+    public Image contentImage;
+    public TMP_Text descriptionText;
+    public Image backgroundRenderer;
+    public AudioSource voiceSource;
+    // [删除] public Button exitButton;  <- 不再需要
 
-    [Header("图片解说")]
-    public AudioSource imageAudio; // 解说音频源
-
-    [Header("退出设置")]
-    public Button exitButton;
-    public string returnSceneName = "Museum_Main";
-
-    private float currentDescriptionVolume = 1.0f;
-    private bool isPausedByPanel = false;
-
-    void Awake()
-    {
-        if (SettingPanel.Instance != null)
-        {
-            SettingPanel.RegisterApplyMethod(ApplyCurrentSettings);
-        }
-    }
-
-    void OnDestroy()
-    {
-        if (SettingPanel.Instance != null)
-        {
-            SettingPanel.UnregisterApplyMethod(ApplyCurrentSettings);
-        }
-    }
+    private bool isPaused = false;
 
     void Start()
     {
-        if (SettingPanel.Instance != null)
+        if (GameData.Instance)
         {
-            ApplyCurrentSettings(SettingPanel.CurrentSettings);
+            if (backgroundRenderer) backgroundRenderer.sprite = GameData.Instance.GetRandomContentBG();
         }
 
-        var data = GameDate.CurrentImageData;
-
-        if (data != null)
+        if (GameData.CurrentImage != null)
         {
-            if (imageTitle) imageTitle.text = "《" + data.Title + "》";
-            if (imageShow && data.ImageFile) imageShow.sprite = data.ImageFile;
-            if (imageDescription) imageDescription.text = data.DescriptionText;
+            var data = GameData.CurrentImage;
+            if (titleText) titleText.text = data.Title;
+            if (contentImage) contentImage.sprite = data.ImageContent;
+            if (descriptionText) descriptionText.text = data.Description;
 
-            if (imageAudio && data.DescriptionAudio)
+            if (data.AutoPlayVoice && data.VoiceClip != null && voiceSource)
             {
-                imageAudio.clip = data.DescriptionAudio;
-                imageAudio.volume = currentDescriptionVolume; // 应用音量
-                imageAudio.Play();
+                voiceSource.clip = data.VoiceClip;
+                StartCoroutine(DelayPlayVoice());
             }
         }
-
-        if (exitButton) exitButton.onClick.AddListener(OnExitButtonClicked);
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        // [删除] exitButton 绑定监听逻辑
     }
 
-    private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
+    IEnumerator DelayPlayVoice()
     {
-        // 【核心修复】只读取解说音量
-        currentDescriptionVolume = settings.descriptionVolume;
-
-        if (imageAudio != null)
-        {
-            imageAudio.volume = currentDescriptionVolume;
-        }
+        yield return new WaitForSeconds(3.0f);
+        if (!isPaused && voiceSource && voiceSource.clip) voiceSource.Play();
     }
 
     void Update()
     {
-        if (SettingPanel.Instance != null)
-        {
-            if (SettingPanel.Instance.isPanelActive)
-            {
-                if (imageAudio != null && imageAudio.isPlaying)
-                {
-                    imageAudio.Pause();
-                    isPausedByPanel = true;
-                }
-            }
-            else
-            {
-                if (isPausedByPanel)
-                {
-                    if (imageAudio != null) imageAudio.UnPause();
-                    isPausedByPanel = false;
-                }
-            }
-        }
+        if (GameData.Instance && voiceSource) voiceSource.volume = GameData.Instance.VoiceVolume;
 
-        if (Input.GetKeyDown(KeyCode.Space) && imageAudio != null && imageAudio.clip != null)
+        if (SettingPanel.Instance)
         {
-            if (imageAudio.isPlaying) imageAudio.Stop();
-            imageAudio.Play();
+            bool panelOpen = SettingPanel.Instance.isPanelActive;
+            if (panelOpen && !isPaused) { if (voiceSource.isPlaying) voiceSource.Pause(); isPaused = true; }
+            else if (!panelOpen && isPaused) { voiceSource.UnPause(); isPaused = false; }
         }
-    }
-
-    void OnExitButtonClicked()
-    {
-        if (imageAudio) imageAudio.Stop();
-        GameDate.ShouldRestorePosition = true;
-        if (System.Type.GetType("SceneLoding") != null) SceneLoding.LoadLevel(returnSceneName);
-        else SceneManager.LoadScene(returnSceneName);
     }
 }

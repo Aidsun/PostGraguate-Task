@@ -2,162 +2,89 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
 using TMPro;
-using UnityEngine.SceneManagement;
 
 public class VideoDisplayController : MonoBehaviour
 {
-    [Header("核心组件")]
+    [Header("组件")]
     public VideoPlayer videoPlayer;
-    public RawImage displayScreen;
-    public AspectRatioFitter videoFitter;
-
-    [Header("UI 信息绑定")]
+    public Image backgroundRenderer;
     public TMP_Text titleText;
     public TMP_Text descriptionText;
-    public AudioSource descriptionAudio;
-
-    [Header("控制按钮")]
-    public Button exitButton;
+    public AudioSource voiceSource;
     public Button pauseButton;
 
-    [Header("设置")]
-    public string returnSceneName = "Museum_Main";
-
-    private bool isPrepared = false;
-    private float currentVideoVolume = 1.0f;
-    private float currentDescriptionVolume = 1.0f;
-    private bool isPausedByPanel = false;
-
-    void Awake()
-    {
-        if (SettingPanel.Instance != null)
-        {
-            SettingPanel.RegisterApplyMethod(ApplyCurrentSettings);
-        }
-    }
-
-    void OnDestroy()
-    {
-        if (SettingPanel.Instance != null)
-        {
-            SettingPanel.UnregisterApplyMethod(ApplyCurrentSettings);
-        }
-    }
+    // 分离状态：用户是否想暂停 vs 系统是否强制暂停
+    private bool isUserPaused = false;
+    private bool isSystemPaused = false;
 
     void Start()
     {
-        if (SettingPanel.Instance != null)
+        if (GameData.Instance && backgroundRenderer) backgroundRenderer.sprite = GameData.Instance.GetRandomContentBG();
+
+        if (GameData.CurrentVideo != null)
         {
-            ApplyCurrentSettings(SettingPanel.CurrentSettings);
+            var data = GameData.CurrentVideo;
+            if (titleText) titleText.text = data.Title;
+            if (descriptionText) descriptionText.text = data.Description;
+
+            if (videoPlayer) { videoPlayer.clip = data.VideoContent; videoPlayer.Play(); }
+            if (data.AutoPlayVoice && data.VoiceClip != null && voiceSource) { voiceSource.clip = data.VoiceClip; voiceSource.Play(); }
         }
 
-        var data = GameDate.CurrentVideoDate;
-        if (data != null)
-        {
-            if (titleText) titleText.text = "《" + data.Title + "》";
-            if (descriptionText) descriptionText.text = data.DescriptionText;
-
-            if (descriptionAudio && data.DescriptionAudio)
-            {
-                descriptionAudio.clip = data.DescriptionAudio;
-                descriptionAudio.volume = currentDescriptionVolume;
-                descriptionAudio.Play();
-            }
-
-            if (videoPlayer && data.VideoFile)
-            {
-                videoPlayer.clip = data.VideoFile;
-                videoPlayer.prepareCompleted += OnVideoPrepared;
-                videoPlayer.Prepare();
-            }
-        }
-
-        if (exitButton) exitButton.onClick.AddListener(OnExitButtonClicked);
-        if (pauseButton) pauseButton.onClick.AddListener(TogglePlayPause);
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-    }
-
-    private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
-    {
-        currentVideoVolume = settings.videoVolume;
-        currentDescriptionVolume = settings.descriptionVolume;
-
-        // 1. 实时更新解说音量
-        if (descriptionAudio != null)
-        {
-            descriptionAudio.volume = currentDescriptionVolume;
-        }
-
-        // 2. 实时更新视频音量 (即使正在播放)
-        if (videoPlayer != null)
-        {
-            SetVideoPlayerVolume(currentVideoVolume);
-        }
-    }
-
-    void OnVideoPrepared(VideoPlayer vp)
-    {
-        isPrepared = true;
-        SetVideoPlayerVolume(currentVideoVolume);
-        vp.Play();
-        if (videoFitter != null) videoFitter.aspectRatio = (float)vp.width / vp.height;
-    }
-
-    void SetVideoPlayerVolume(float volume)
-    {
-        if (videoPlayer != null)
-        {
-            // 实时设置所有声道的音量
-            for (ushort i = 0; i < videoPlayer.audioTrackCount; i++)
-            {
-                videoPlayer.SetDirectAudioVolume(i, volume);
-            }
-        }
+        if (pauseButton) pauseButton.onClick.AddListener(OnPauseButtonClicked);
     }
 
     void Update()
     {
-        if (isPrepared && Input.GetKeyDown(KeyCode.Space)) TogglePlayPause();
-
-        if (SettingPanel.Instance != null)
+        // 1. 同步音量
+        if (GameData.Instance)
         {
-            if (SettingPanel.Instance.isPanelActive)
+            if (videoPlayer) videoPlayer.SetDirectAudioVolume(0, GameData.Instance.VideoVolume);
+            if (voiceSource) voiceSource.volume = GameData.Instance.VoiceVolume;
+
+            // 2. 检测用户按键输入
+            if (Input.GetKeyDown(GameData.Instance.VideoPauseKey))
             {
-                if (!isPausedByPanel)
-                {
-                    if (videoPlayer.isPlaying) videoPlayer.Pause();
-                    if (descriptionAudio && descriptionAudio.isPlaying) descriptionAudio.Pause();
-                    isPausedByPanel = true;
-                }
+                OnPauseButtonClicked();
             }
-            else
+        }
+
+        // 3. 检测系统面板状态 (设置面板打开时强制暂停)
+        if (SettingPanel.Instance)
+        {
+            bool panelOpen = SettingPanel.Instance.isPanelActive;
+
+            // 如果面板状态改变了，更新系统暂停状态
+            if (isSystemPaused != panelOpen)
             {
-                if (isPausedByPanel)
-                {
-                    if (!videoPlayer.isPlaying) videoPlayer.Play();
-                    if (descriptionAudio && !descriptionAudio.isPlaying && descriptionAudio.time > 0)
-                        descriptionAudio.UnPause();
-                    isPausedByPanel = false;
-                }
+                isSystemPaused = panelOpen;
+                RefreshPlayState(); // 状态改变时刷新播放/暂停
             }
         }
     }
 
-    void TogglePlayPause()
+    // 用户手动点击按钮或按键
+    public void OnPauseButtonClicked()
     {
-        if (videoPlayer == null) return;
-        if (videoPlayer.isPlaying) videoPlayer.Pause();
-        else videoPlayer.Play();
+        isUserPaused = !isUserPaused; // 切换用户意愿
+        RefreshPlayState();
     }
 
-    void OnExitButtonClicked()
+    // 核心逻辑：根据用户意愿和系统状态，决定最终是播还是停
+    void RefreshPlayState()
     {
-        if (videoPlayer) videoPlayer.Stop();
-        if (descriptionAudio) descriptionAudio.Stop();
-        GameDate.ShouldRestorePosition = true;
-        if (System.Type.GetType("SceneLoding") != null) SceneLoding.LoadLevel(returnSceneName);
-        else SceneManager.LoadScene(returnSceneName);
+        // 只要 “用户想暂停” 或者 “系统强制暂停(面板打开)”，就必须暂停
+        bool shouldPause = isUserPaused || isSystemPaused;
+
+        if (shouldPause)
+        {
+            if (videoPlayer && videoPlayer.isPlaying) videoPlayer.Pause();
+            if (voiceSource) voiceSource.Pause();
+        }
+        else
+        {
+            if (videoPlayer && !videoPlayer.isPlaying) videoPlayer.Play();
+            if (voiceSource) voiceSource.UnPause();
+        }
     }
 }

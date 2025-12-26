@@ -1,51 +1,32 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
-using System.Collections;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class StartGame : MonoBehaviour
 {
-    [Header("核心组件")]
+    [Header("=== 核心组件 ===")]
     public VideoPlayer videoPlayer;
     public CanvasGroup uiGroup;
     public AudioSource bgmAudioSource;
 
-    [Header("流程设置")]
-    [Tooltip("有声音播放的循环次数")]
-    public int loopTimesWithSound = 5;
+    [Header("=== 帮助面板 ===")]
+    public GameObject helpPanel;
+    public Button closeHelpBtn;
 
-    [Tooltip("声音淡出需要的时间 (秒)")]
-    public float audioFadeDuration = 2.0f;
-
-    [Tooltip("UI 渐显需要的时间 (秒)")]
-    public float uiFadeDuration = 1.5f;
-
-    [Header("场景跳转")]
-    public string nextSceneName = "Museum_Main";
+    [Header("=== 按钮绑定 ===")]
     public Button startBtn;
+    public Button helpBtn;
     public Button quitBtn;
 
-    private int currentLoopCount = 0;
-    private bool transitionStarted = false;
+    [Header("=== 参数设置 ===")]
+    public string nextSceneName = "Museum_Main";
+    public float uiFadeDuration = 1.5f;
 
-    void Awake()
-    {
-        if (SettingPanel.Instance != null)
-        {
-            SettingPanel.RegisterApplyMethod(ApplyCurrentSettings);
-        }
-    }
+    private bool isIntroPlaying = false;
 
-    void OnDestroy()
-    {
-        if (SettingPanel.Instance != null)
-        {
-            SettingPanel.UnregisterApplyMethod(ApplyCurrentSettings);
-        }
-    }
-
-    void Start()
+    private void Start()
     {
         if (uiGroup != null)
         {
@@ -53,93 +34,78 @@ public class StartGame : MonoBehaviour
             uiGroup.interactable = false;
             uiGroup.blocksRaycasts = false;
         }
+        if (helpPanel != null) helpPanel.SetActive(false);
 
-        if (SettingPanel.Instance != null)
+        if (startBtn) startBtn.onClick.AddListener(OnStartGame);
+        if (helpBtn) helpBtn.onClick.AddListener(OnOpenHelp);
+        if (quitBtn) quitBtn.onClick.AddListener(OnQuitGame);
+        if (closeHelpBtn) closeHelpBtn.onClick.AddListener(OnCloseHelp);
+
+        PlayBackgroundVideo();
+    }
+
+    private void Update()
+    {
+        // 【新增】点击鼠标左键跳过介绍视频
+        if (isIntroPlaying && Input.GetMouseButtonDown(0))
         {
-            ApplyCurrentSettings(SettingPanel.CurrentSettings);
+            SkipIntro();
         }
+    }
 
+    private void PlayBackgroundVideo()
+    {
+        if (videoPlayer == null || GameData.Instance == null) return;
+
+        UpdateVideoVolume();
+
+        if (GameData.Instance.HasPlayedIntro || GameData.Instance.StartIntroVideo == null)
+        {
+            PlayLoopVideo();
+        }
+        else
+        {
+            isIntroPlaying = true;
+            videoPlayer.clip = GameData.Instance.StartIntroVideo;
+            videoPlayer.isLooping = false;
+            videoPlayer.loopPointReached += OnIntroFinished;
+            videoPlayer.Play();
+
+            GameData.Instance.HasPlayedIntro = true;
+        }
+    }
+
+    private void OnIntroFinished(VideoPlayer vp)
+    {
+        vp.loopPointReached -= OnIntroFinished;
+        PlayLoopVideo();
+    }
+
+    // 【新增】跳过逻辑
+    private void SkipIntro()
+    {
         if (videoPlayer != null)
         {
+            videoPlayer.loopPointReached -= OnIntroFinished; // 移除监听
+            PlayLoopVideo(); // 强行进入下一阶段
+        }
+    }
+
+    private void PlayLoopVideo()
+    {
+        isIntroPlaying = false;
+
+        if (GameData.Instance.StartLoopVideo != null)
+        {
+            videoPlayer.clip = GameData.Instance.StartLoopVideo;
             videoPlayer.isLooping = true;
-            videoPlayer.loopPointReached += OnLoopPointReached;
-
-            float initVol = (SettingPanel.Instance != null) ? SettingPanel.CurrentSettings.bgmVolume : 1.0f;
-            SetVideoVolume(initVol);
-
             videoPlayer.Play();
         }
 
-        if (startBtn) startBtn.onClick.AddListener(StartButton);
-        if (quitBtn) quitBtn.onClick.AddListener(QuitButton);
-    }
-
-    void Update()
-    {
-        if (transitionStarted) return;
-
-        if (SettingPanel.Instance != null && uiGroup != null && uiGroup.alpha >= 0.9f)
-        {
-            if (SettingPanel.Instance.isPanelActive)
-            {
-                if (uiGroup.interactable) uiGroup.interactable = false;
-                if (uiGroup.blocksRaycasts) uiGroup.blocksRaycasts = false;
-            }
-            else
-            {
-                if (!uiGroup.interactable) uiGroup.interactable = true;
-                if (!uiGroup.blocksRaycasts) uiGroup.blocksRaycasts = true;
-            }
-        }
-    }
-
-    private void ApplyCurrentSettings(SettingPanel.SettingDate settings)
-    {
-        if (transitionStarted) return;
-        loopTimesWithSound = settings.startGameVideoLoopCount;
-
-        // 【核心修复】实时更新音量
-        SetVideoVolume(settings.bgmVolume);
-
-        Debug.Log($"StartGame: 同步设置 - 循环: {loopTimesWithSound}, 音量: {settings.bgmVolume}");
-    }
-
-    void OnLoopPointReached(VideoPlayer vp)
-    {
-        if (transitionStarted) return;
-
-        currentLoopCount++;
-        if (currentLoopCount >= loopTimesWithSound)
-        {
-            StartTransition();
-        }
-    }
-
-    void StartTransition()
-    {
-        transitionStarted = true;
-        videoPlayer.loopPointReached -= OnLoopPointReached;
-        StartCoroutine(FadeOutAudio());
         StartCoroutine(FadeInUI());
     }
 
-    IEnumerator FadeOutAudio()
-    {
-        float timer = 0f;
-        float startVolume = GetCurrentVideoVolume();
-
-        while (timer < audioFadeDuration)
-        {
-            timer += Time.deltaTime;
-            float newVolume = Mathf.Lerp(startVolume, 0f, timer / audioFadeDuration);
-            SetVideoVolume(newVolume);
-            yield return null;
-        }
-
-        SetVideoVolume(0f);
-    }
-
-    IEnumerator FadeInUI()
+    private IEnumerator FadeInUI()
     {
         float timer = 0f;
         while (timer < uiFadeDuration)
@@ -160,44 +126,40 @@ public class StartGame : MonoBehaviour
         Cursor.visible = true;
     }
 
-    void SetVideoVolume(float volume)
+    private void UpdateVideoVolume()
     {
-        if (bgmAudioSource != null)
-        {
-            bgmAudioSource.volume = volume;
-        }
-        else if (videoPlayer != null)
-        {
-            // 实时控制直通音量
-            for (ushort i = 0; i < videoPlayer.audioTrackCount; i++)
-            {
-                videoPlayer.SetDirectAudioVolume(i, volume);
-            }
-        }
+        float vol = GameData.Instance.BgmVolume;
+        if (bgmAudioSource != null) bgmAudioSource.volume = vol;
+        else if (videoPlayer != null) videoPlayer.SetDirectAudioVolume(0, vol);
     }
 
-    float GetCurrentVideoVolume()
+    void OnStartGame()
     {
-        if (bgmAudioSource != null) return bgmAudioSource.volume;
-        if (videoPlayer != null && videoPlayer.audioTrackCount > 0) return videoPlayer.GetDirectAudioVolume(0);
-        return 1.0f;
+        SceneLoading.LoadLevel(nextSceneName);
     }
 
-    void StartButton()
+    // 【修复】打开帮助时暂停视频和声音
+    void OnOpenHelp()
     {
-        Time.timeScale = 1f;
-        if (System.Type.GetType("SceneLoding") != null)
-            SceneLoding.LoadLevel(nextSceneName);
-        else
-            SceneManager.LoadScene(nextSceneName);
+        if (helpPanel) helpPanel.SetActive(true);
+        if (videoPlayer) videoPlayer.Pause();
+        if (bgmAudioSource) bgmAudioSource.Pause();
     }
 
-    void QuitButton()
+    // 【修复】关闭帮助时恢复
+    void OnCloseHelp()
+    {
+        if (helpPanel) helpPanel.SetActive(false);
+        if (videoPlayer) videoPlayer.Play();
+        if (bgmAudioSource) bgmAudioSource.UnPause();
+    }
+
+    void OnQuitGame()
     {
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        Application.Quit();
+            Application.Quit();
 #endif
     }
 }
