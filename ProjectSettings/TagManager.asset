@@ -6,6 +6,10 @@ TagManager:
   tags:
   - CinemachineTarget
   - Picture
+  - BgmAudio
+  - VidAudio
+  - DesAudio
+  - BtnAudio
   layers:
   - Default
   - TransparentFX
