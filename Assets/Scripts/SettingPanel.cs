@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Video; // 【重要】引入视频控制命名空间
 
 public class SettingPanel : MonoBehaviour
 {
@@ -13,34 +15,28 @@ public class SettingPanel : MonoBehaviour
     public GameObject panelRoot;
 
     [Space(10)]
-    [Header("=== 🎮 控制设置 UI ===")]
-    public TMP_Dropdown viewKeyDropdown;
-    public TMP_Dropdown callPanelDropdown;
-    public TMP_Dropdown videoControlDropdown;
-
-    [Header("=== 🚶 漫游设置 UI ===")]
-    public Toggle defaultViewToggle;
-    public TMP_InputField moveSpeedInput;
-    public TMP_InputField jumpHeightInput;
-    public TMP_InputField interactionDistInput;
-    public Slider footstepVolumeSlider;
-    public TMP_InputField stepDistInput;
-
-    [Header("=== 🔊 音效与系统 UI ===")]
+    [Header("=== 🔊 音量滑块绑定 (修改GameData) ===")]
     public Slider bgmVolumeSlider;
     public Slider videoVolumeSlider;
     public Slider descriptionVolumeSlider;
     public Slider buttonVolumeSlider;
 
-    public TMP_InputField loadingTimeInput;
-    public TMP_InputField loopCountInput;
-
-    [Header("=== 🔘 底部按钮 ===")]
+    [Header("=== 🎮 其他设置 UI ===")]
+    public TMP_Dropdown viewKeyDropdown;
+    public TMP_Dropdown callPanelDropdown;
+    public TMP_Dropdown videoControlDropdown;
+    public Toggle defaultViewToggle;
+    public TMP_InputField moveSpeedInput;
+    public TMP_InputField jumpHeightInput;
+    public TMP_InputField interactionDistInput;
+    public TMP_InputField stepDistInput;
     public Button saveButton;
     public Button exitButton;
 
-    // 确保默认为 false
     [HideInInspector] public bool isPanelActive = false;
+
+    // 【新增】用于播放面板音效的音源
+    private AudioSource uiAudioSource;
 
     [System.Serializable]
     public class InputConfig
@@ -57,7 +53,6 @@ public class SettingPanel : MonoBehaviour
 
     private void Awake()
     {
-        // 严格的单例模式保护
         if (Instance == null)
         {
             Instance = this;
@@ -66,8 +61,30 @@ public class SettingPanel : MonoBehaviour
         else
         {
             Destroy(gameObject);
-            return; // 这里的 return 很重要，防止后续代码执行
         }
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (FindObjectOfType<EventSystem>() == null)
+        {
+            GameObject eventSystem = new GameObject("EventSystem_AutoCreated");
+            eventSystem.AddComponent<EventSystem>();
+            eventSystem.AddComponent<StandaloneInputModule>();
+            Debug.Log("🔧 [SettingPanel] 已自动修复缺失的 EventSystem");
+        }
+        InitUI();
+        BindEvents();
     }
 
     private void Start()
@@ -76,48 +93,31 @@ public class SettingPanel : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
         isPanelActive = false;
 
-        // 强制重置时间，防止因为异常退出导致的卡死
+        // 【新增】初始化音频组件
+        uiAudioSource = GetComponent<AudioSource>();
+        if (uiAudioSource == null)
+        {
+            uiAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+        // 设置为2D声音，防止因为位置听不见
+        uiAudioSource.spatialBlend = 0f;
+        uiAudioSource.playOnAwake = false;
+
+        // 确保游戏开始时时间是正常的
         Time.timeScale = 1f;
 
         InitUI();
         BindEvents();
     }
 
-    private void SetupPanelLayer()
-    {
-        if (panelRoot == null) return;
-        Canvas cv = panelRoot.GetComponent<Canvas>();
-        if (cv == null) cv = panelRoot.AddComponent<Canvas>();
-        // 提高SortingOrder，确保面板永远在最上层，不会被其他UI遮挡导致点击不到
-        cv.overrideSorting = true;
-        cv.sortingOrder = 9999;
-        if (panelRoot.GetComponent<GraphicRaycaster>() == null) panelRoot.AddComponent<GraphicRaycaster>();
-        if (panelRoot.GetComponent<CanvasGroup>() == null) panelRoot.AddComponent<CanvasGroup>();
-    }
-
-    private void Update()
-    {
-        // 如果在 Loading 界面，禁止呼出
-        if (SceneManager.GetActiveScene().name == "LoadingScene") return;
-
-        // 【核心修复】将按键检测放在 Update 最顶层
-        // 确保 KeyConfig.CallPanelKey 有值，如果没有则默认为 Tab
-        KeyCode callKey = KeyConfig.CallPanelKey == KeyCode.None ? KeyCode.Tab : KeyConfig.CallPanelKey;
-
-        if (Input.GetKeyDown(callKey))
-        {
-            SwitchSettingPanel(!isPanelActive);
-        }
-    }
-
     private void InitUI()
     {
         if (GameData.Instance != null)
         {
-            if (bgmVolumeSlider) bgmVolumeSlider.value = GameData.Instance.BgmVolume;
-            if (videoVolumeSlider) videoVolumeSlider.value = GameData.Instance.VideoVolume;
-            if (descriptionVolumeSlider) descriptionVolumeSlider.value = GameData.Instance.VoiceVolume;
-            if (buttonVolumeSlider) buttonVolumeSlider.value = GameData.Instance.ButtonVolume;
+            if (bgmVolumeSlider) bgmVolumeSlider.SetValueWithoutNotify(GameData.Instance.BgmVolume);
+            if (videoVolumeSlider) videoVolumeSlider.SetValueWithoutNotify(GameData.Instance.VideoVolume);
+            if (descriptionVolumeSlider) descriptionVolumeSlider.SetValueWithoutNotify(GameData.Instance.VoiceVolume);
+            if (buttonVolumeSlider) buttonVolumeSlider.SetValueWithoutNotify(GameData.Instance.ButtonVolume);
 
             if (moveSpeedInput) moveSpeedInput.text = GameData.Instance.MoveSpeed.ToString();
             if (jumpHeightInput) jumpHeightInput.text = GameData.Instance.JumpHeight.ToString();
@@ -132,50 +132,113 @@ public class SettingPanel : MonoBehaviour
 
     private void BindEvents()
     {
-        if (bgmVolumeSlider) bgmVolumeSlider.onValueChanged.AddListener((v) => { if (GameData.Instance) GameData.Instance.BgmVolume = v; });
-        if (videoVolumeSlider) videoVolumeSlider.onValueChanged.AddListener((v) => { if (GameData.Instance) GameData.Instance.VideoVolume = v; });
-        if (descriptionVolumeSlider) descriptionVolumeSlider.onValueChanged.AddListener((v) => { if (GameData.Instance) GameData.Instance.VoiceVolume = v; });
-        if (buttonVolumeSlider) buttonVolumeSlider.onValueChanged.AddListener((v) => { if (GameData.Instance) GameData.Instance.ButtonVolume = v; });
+        if (bgmVolumeSlider) bgmVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (videoVolumeSlider) videoVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (descriptionVolumeSlider) descriptionVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (buttonVolumeSlider) buttonVolumeSlider.onValueChanged.RemoveAllListeners();
 
-        if (moveSpeedInput) moveSpeedInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) GameData.Instance.MoveSpeed = v; });
-        if (jumpHeightInput) jumpHeightInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) GameData.Instance.JumpHeight = v; });
-        if (interactionDistInput) interactionDistInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) GameData.Instance.InteractionDistance = v; });
-        if (stepDistInput) stepDistInput.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v)) GameData.Instance.StepDistance = v; });
+        if (bgmVolumeSlider) bgmVolumeSlider.onValueChanged.AddListener((v) => {
+            if (GameData.Instance) GameData.Instance.BgmVolume = v;
+            var helper = bgmVolumeSlider.GetComponentInChildren<UI_SliderValue>();
+            if (helper) helper.UpdateText(v);
+        });
 
-        if (viewKeyDropdown) viewKeyDropdown.onValueChanged.AddListener((idx) => { KeyConfig.ViewSwitchKey = dropdownKeys[idx]; });
-        if (callPanelDropdown) callPanelDropdown.onValueChanged.AddListener((idx) => { KeyConfig.CallPanelKey = dropdownKeys[idx]; });
-        if (videoControlDropdown) videoControlDropdown.onValueChanged.AddListener((idx) => { if (GameData.Instance) GameData.Instance.VideoPauseKey = dropdownKeys[idx]; });
+        if (videoVolumeSlider) videoVolumeSlider.onValueChanged.AddListener((v) => {
+            if (GameData.Instance) GameData.Instance.VideoVolume = v;
+            var helper = videoVolumeSlider.GetComponentInChildren<UI_SliderValue>();
+            if (helper) helper.UpdateText(v);
+        });
 
-        if (saveButton) saveButton.onClick.AddListener(SaveSettings);
-        if (exitButton) exitButton.onClick.AddListener(OnExitButton);
+        if (descriptionVolumeSlider) descriptionVolumeSlider.onValueChanged.AddListener((v) => {
+            if (GameData.Instance) GameData.Instance.VoiceVolume = v;
+            var helper = descriptionVolumeSlider.GetComponentInChildren<UI_SliderValue>();
+            if (helper) helper.UpdateText(v);
+        });
+
+        if (buttonVolumeSlider) buttonVolumeSlider.onValueChanged.AddListener((v) => {
+            if (GameData.Instance) GameData.Instance.ButtonVolume = v;
+            var helper = buttonVolumeSlider.GetComponentInChildren<UI_SliderValue>();
+            if (helper) helper.UpdateText(v);
+        });
+
+        BindInput(moveSpeedInput, (v) => GameData.Instance.MoveSpeed = v);
+        BindInput(jumpHeightInput, (v) => GameData.Instance.JumpHeight = v);
+        BindInput(interactionDistInput, (v) => GameData.Instance.InteractionDistance = v);
+        BindInput(stepDistInput, (v) => GameData.Instance.StepDistance = v);
+
+        if (viewKeyDropdown) { viewKeyDropdown.onValueChanged.RemoveAllListeners(); viewKeyDropdown.onValueChanged.AddListener((idx) => KeyConfig.ViewSwitchKey = dropdownKeys[idx]); }
+        if (callPanelDropdown) { callPanelDropdown.onValueChanged.RemoveAllListeners(); callPanelDropdown.onValueChanged.AddListener((idx) => KeyConfig.CallPanelKey = dropdownKeys[idx]); }
+        if (videoControlDropdown) { videoControlDropdown.onValueChanged.RemoveAllListeners(); videoControlDropdown.onValueChanged.AddListener((idx) => { if (GameData.Instance) GameData.Instance.VideoPauseKey = dropdownKeys[idx]; }); }
+
+        if (saveButton) { saveButton.onClick.RemoveAllListeners(); saveButton.onClick.AddListener(SaveSettings); }
+        if (exitButton) { exitButton.onClick.RemoveAllListeners(); exitButton.onClick.AddListener(OnExitButton); }
     }
 
-    private void UpdateDropdownSelection(TMP_Dropdown dropdown, KeyCode currentKey)
+    void BindInput(TMP_InputField input, System.Action<float> onValChange)
     {
-        if (dropdown == null) return;
-        dropdown.ClearOptions();
-        dropdown.AddOptions(dropdownKeys.Select(k => k.ToString()).ToList());
-        int index = dropdownKeys.IndexOf(currentKey);
-        if (index >= 0) dropdown.value = index;
+        if (input == null) return;
+        input.onEndEdit.RemoveAllListeners();
+        input.onEndEdit.AddListener((str) => { if (float.TryParse(str, out float v) && GameData.Instance) onValChange(v); });
     }
 
+    private void UpdateDropdownSelection(TMP_Dropdown dropdown, KeyCode currentKey) { if (dropdown == null) return; dropdown.ClearOptions(); dropdown.AddOptions(dropdownKeys.Select(k => k.ToString()).ToList()); int index = dropdownKeys.IndexOf(currentKey); if (index >= 0) dropdown.value = index; }
+
+    private void SetupPanelLayer()
+    {
+        if (panelRoot == null) return;
+        Canvas cv = panelRoot.GetComponent<Canvas>();
+        if (cv == null) cv = panelRoot.AddComponent<Canvas>();
+        cv.overrideSorting = true;
+        cv.sortingOrder = 9999;
+        if (panelRoot.GetComponent<GraphicRaycaster>() == null) panelRoot.AddComponent<GraphicRaycaster>();
+        if (panelRoot.GetComponent<CanvasGroup>() == null) panelRoot.AddComponent<CanvasGroup>();
+    }
+
+    private void Update()
+    {
+        if (SceneManager.GetActiveScene().name == "LoadingScene") return;
+        KeyCode callKey = KeyConfig.CallPanelKey == KeyCode.None ? KeyCode.Tab : KeyConfig.CallPanelKey;
+        if (Input.GetKeyDown(callKey)) SwitchSettingPanel(!isPanelActive);
+    }
+
+    // 【核心修改】
     public void SwitchSettingPanel(bool isOpen)
     {
         isPanelActive = isOpen;
-
-        if (panelRoot)
-            panelRoot.SetActive(isOpen);
+        if (panelRoot) panelRoot.SetActive(isOpen);
 
         if (isOpen)
         {
+            // 1. 暂停游戏逻辑
             Time.timeScale = 0f;
+
+            // 【修复】使用 InternalTime 让视频跟随游戏时间暂停
+            VideoPlayer[] allVideoPlayers = FindObjectsOfType<VideoPlayer>();
+            foreach (var vp in allVideoPlayers)
+            {
+                if (vp != null) vp.timeReference = VideoTimeReference.InternalTime; // 这里改成了 InternalTime
+            }
+
+            // 2. 播放打开音效
+            if (GameData.Instance && GameData.Instance.PanelOpenSound)
+            {
+                if (uiAudioSource == null) uiAudioSource = GetComponent<AudioSource>();
+                if (uiAudioSource != null)
+                {
+                    uiAudioSource.PlayOneShot(GameData.Instance.PanelOpenSound, GameData.Instance.ButtonVolume);
+                }
+            }
+
+            // 3. 解锁鼠标
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
         else
         {
+            // 1. 恢复游戏逻辑
             Time.timeScale = 1f;
-            // 只有在非 StartGame 场景才锁定鼠标
+
+            // 2. 鼠标状态恢复
             if (SceneManager.GetActiveScene().name == "StartGame")
             {
                 Cursor.lockState = CursorLockMode.None;
@@ -183,8 +246,6 @@ public class SettingPanel : MonoBehaviour
             }
             else
             {
-                // 注意：如果你在视频界面也希望显示鼠标，这里可能需要加个判断
-                // 比如： if (SceneManager.GetActiveScene().name == "VideoDisplay") ...
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
@@ -193,7 +254,8 @@ public class SettingPanel : MonoBehaviour
 
     public void OnExitButton()
     {
-        Time.timeScale = 1f;
+        Time.timeScale = 1f; // 退出前必须恢复时间
+
         SwitchSettingPanel(false);
         string currentScene = SceneManager.GetActiveScene().name;
 
@@ -205,15 +267,8 @@ public class SettingPanel : MonoBehaviour
             Application.Quit();
 #endif
         }
-        else if (currentScene == "Museum_Main")
-        {
-            SceneManager.LoadScene("StartGame");
-        }
-        else
-        {
-            if (GameData.Instance) GameData.Instance.ShouldRestorePosition = true;
-            SceneLoading.LoadLevel("Museum_Main");
-        }
+        else if (currentScene == "Museum_Main") { SceneManager.LoadScene("StartGame"); }
+        else { if (GameData.Instance) GameData.Instance.ShouldRestorePosition = true; SceneLoading.LoadLevel("Museum_Main"); }
     }
 
     private void SaveSettings()

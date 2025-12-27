@@ -19,38 +19,41 @@ public class GameData : MonoBehaviour
         }
     }
 
-    [Header("=== 玩家状态存档 ===")]
-    public Vector3 LastPlayerPosition;
-    public Quaternion LastPlayerRotation;
-    public bool WasFirstPerson = true;
-    public bool ShouldRestorePosition = false;
+    [Header("=== 1. 全局状态记录 ===")]
+    public bool HasPlayedIntro = false;
 
-    [Header("=== 全局配置参数 (带默认值) ===")]
+    [Header("=== 2. 全局音量控制 (数据源, 0-1) ===")]
     [Range(0, 1)] public float BgmVolume = 1.0f;
     [Range(0, 1)] public float VideoVolume = 1.0f;
     [Range(0, 1)] public float VoiceVolume = 1.0f;
     [Range(0, 1)] public float ButtonVolume = 1.0f;
 
-    // 【新增】核心游戏参数 (直接在这里给默认值，解决所有0值问题)
-    public float MoveSpeed = 5.0f;          // 默认移动速度
-    public float JumpHeight = 1.2f;         // 默认跳跃高度
-    public float InteractionDistance = 10.0f; // 默认交互距离
-    public float StepDistance = 1.8f;       // 默认步长
+    [Header("=== 3. 全局通用音频资源 ===")]
+    public AudioClip ButtonClickSound; // 通用的点击“咔哒”声
+    public AudioClip HighlightSound;   // 通用的高亮提示音
+    // 【新增】面板打开音效
+    public AudioClip PanelOpenSound;
 
+    [Header("=== 4. 游戏核心参数 ===")]
     public Color HighlightColor = Color.yellow;
+
+    public float MoveSpeed = 5.0f;
+    public float JumpHeight = 1.2f;
+    public float InteractionDistance = 10.0f;
+    public float StepDistance = 1.8f;
     [HideInInspector] public KeyCode VideoPauseKey = KeyCode.Space;
 
-    [Header("=== 资源库 ===")]
-    public VideoClip StartIntroVideo;
-    public VideoClip StartLoopVideo;
-    [HideInInspector] public bool HasPlayedIntro = false;
+    // 玩家位置记忆
+    public bool ShouldRestorePosition = false;
+    public Vector3 LastPlayerPosition;
+    public Quaternion LastPlayerRotation;
+    public bool WasFirstPerson = true;
 
-    public AudioClip HighlightSound;
-
-    public List<Sprite> LoadingBackgrounds;
+    // 资源库
     public List<Sprite> ContentBackgrounds;
+    public List<Sprite> LoadingBackgrounds;
 
-    // --- 数据包定义 ---
+    // --- 跨场景传递的数据包 ---
     [System.Serializable]
     public class ImagePacket
     {
@@ -72,16 +75,15 @@ public class GameData : MonoBehaviour
     }
     public static PanoramaPacket CurrentPanorama;
 
-    // --- 辅助方法 ---
-    public Sprite GetRandomLoadingBG()
-    {
-        if (LoadingBackgrounds == null || LoadingBackgrounds.Count == 0) return null;
-        return LoadingBackgrounds[Random.Range(0, LoadingBackgrounds.Count)];
-    }
-
+    // 辅助方法
     public Sprite GetRandomContentBG()
     {
         if (ContentBackgrounds == null || ContentBackgrounds.Count == 0) return null;
         return ContentBackgrounds[Random.Range(0, ContentBackgrounds.Count)];
+    }
+    public Sprite GetRandomLoadingBG()
+    {
+        if (LoadingBackgrounds == null || LoadingBackgrounds.Count == 0) return null;
+        return LoadingBackgrounds[Random.Range(0, LoadingBackgrounds.Count)];
     }
 }

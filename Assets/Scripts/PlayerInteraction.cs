@@ -18,7 +18,6 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (SettingPanel.Instance != null && SettingPanel.Instance.isPanelActive) { ClearHighlight(); return; }
 
-        // 【直接读取 GameData】
         if (GameData.Instance != null) interactionDistance = GameData.Instance.InteractionDistance;
 
         PerformRaycast();
@@ -46,8 +45,11 @@ public class PlayerInteraction : MonoBehaviour
         if (lastFrameItem != item)
         {
             ClearHighlight(); lastFrameItem = item;
-            if (GameData.Instance && GameData.Instance.HighlightSound)
-                AudioSource.PlayClipAtPoint(GameData.Instance.HighlightSound, transform.position, GameData.Instance.ButtonVolume);
+
+            // 【修正】使用 AudioManager 播放，确保走 Mixer 混音器通道
+            if (AudioManager.Instance)
+                AudioManager.Instance.PlayHighlightSound();
+
             item.SendMessage("SetHighlight", true, SendMessageOptions.DontRequireReceiver);
         }
         if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0)) item.SendMessage("StartDisplay", SendMessageOptions.DontRequireReceiver);

@@ -25,7 +25,7 @@ public class UI_SliderValue : MonoBehaviour
 
     void Start()
     {
-        // 1. 自动查找组件 (智能容错)
+        // 1. 自动查找组件
         if (targetSlider == null) targetSlider = GetComponentInParent<Slider>();
         if (valueText == null) valueText = GetComponent<TMP_Text>();
 
@@ -35,8 +35,8 @@ public class UI_SliderValue : MonoBehaviour
             // 初始化显示一次
             UpdateText(targetSlider.value);
 
-            // 监听数值变化 (当滑块拖动时实时更新)
-            targetSlider.onValueChanged.RemoveAllListeners();
+            // 【关键修复】删掉了 RemoveAllListeners()
+            // 这样就不会把 SettingPanel 绑定的音量控制逻辑给删掉了！
             targetSlider.onValueChanged.AddListener(UpdateText);
         }
         else
@@ -45,25 +45,21 @@ public class UI_SliderValue : MonoBehaviour
         }
     }
 
-    // 更新文本的核心方法
     public void UpdateText(float val)
     {
         if (valueText == null) return;
 
         if (showPercent)
         {
-            // 百分比模式：0.5 -> 50
             int percent = Mathf.RoundToInt(val * 100);
             valueText.text = $"{prefix}{percent}{suffix}";
         }
         else
         {
-            // 普通数字模式：直接显示数值
             valueText.text = $"{prefix}{val.ToString(numberFormat)}{suffix}";
         }
     }
 
-    // 供外部强制刷新的方法
     public void ForceRefresh()
     {
         if (targetSlider != null) UpdateText(targetSlider.value);

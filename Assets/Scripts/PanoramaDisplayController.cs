@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.Video;
-using UnityEngine.UI;
 using TMPro;
 
 public class PanoramaDisplayController : MonoBehaviour
@@ -8,8 +7,6 @@ public class PanoramaDisplayController : MonoBehaviour
     public VideoPlayer videoPlayer;
     public Material skyboxMat;
     public TMP_Text titleText;
-    public AudioSource voiceSource;
-    // [删除] public Button exitButton;
 
     private RenderTexture rt;
     private bool isPaused = false;
@@ -23,15 +20,34 @@ public class PanoramaDisplayController : MonoBehaviour
 
             if (videoPlayer)
             {
+                // 创建RT
                 rt = new RenderTexture(4096, 2048, 0);
                 videoPlayer.targetTexture = rt;
-                if (skyboxMat) { skyboxMat.SetTexture("_MainTex", rt); RenderSettings.skybox = skyboxMat; }
+                if (skyboxMat)
+                {
+                    skyboxMat.SetTexture("_MainTex", rt);
+                    RenderSettings.skybox = skyboxMat;
+                }
                 videoPlayer.clip = data.PanoramaContent;
+
+                // 路由声音到 VidAudio
+                if (AudioManager.Instance && AudioManager.Instance.VidSource)
+                {
+                    videoPlayer.audioOutputMode = VideoAudioOutputMode.AudioSource;
+                    videoPlayer.EnableAudioTrack(0, true);
+                    videoPlayer.SetTargetAudioSource(0, AudioManager.Instance.VidSource);
+                }
                 videoPlayer.Play();
             }
-            if (data.AutoPlayVoice && data.VoiceClip != null && voiceSource) { voiceSource.clip = data.VoiceClip; voiceSource.Play(); }
+
+            // 播放解说 DesAudio
+            if (data.VoiceClip != null && AudioManager.Instance && AudioManager.Instance.DesSource)
+            {
+                var des = AudioManager.Instance.DesSource;
+                des.clip = data.VoiceClip;
+                if (data.AutoPlayVoice) des.Play();
+            }
         }
-        // [删除] exitButton 绑定
     }
 
     void OnDestroy()
@@ -41,17 +57,21 @@ public class PanoramaDisplayController : MonoBehaviour
 
     void Update()
     {
-        if (GameData.Instance)
-        {
-            if (videoPlayer) videoPlayer.SetDirectAudioVolume(0, GameData.Instance.VideoVolume);
-            if (voiceSource) voiceSource.volume = GameData.Instance.VoiceVolume;
-        }
-
         if (SettingPanel.Instance)
         {
             bool panelOpen = SettingPanel.Instance.isPanelActive;
-            if (panelOpen && !isPaused) { if (videoPlayer.isPlaying) videoPlayer.Pause(); isPaused = true; }
-            else if (!panelOpen && isPaused) { videoPlayer.Play(); isPaused = false; }
+            if (panelOpen && !isPaused)
+            {
+                if (videoPlayer.isPlaying) videoPlayer.Pause();
+                if (AudioManager.Instance.DesSource.isPlaying) AudioManager.Instance.DesSource.Pause();
+                isPaused = true;
+            }
+            else if (!panelOpen && isPaused)
+            {
+                videoPlayer.Play();
+                if (AudioManager.Instance.DesSource.clip != null) AudioManager.Instance.DesSource.UnPause();
+                isPaused = false;
+            }
         }
     }
 }
