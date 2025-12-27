@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.Video; // 【重要】引入视频控制命名空间
+using UnityEngine.Video;
 
 public class SettingPanel : MonoBehaviour
 {
@@ -34,8 +34,6 @@ public class SettingPanel : MonoBehaviour
     public Button exitButton;
 
     [HideInInspector] public bool isPanelActive = false;
-
-    // 【新增】用于播放面板音效的音源
     private AudioSource uiAudioSource;
 
     [System.Serializable]
@@ -74,15 +72,37 @@ public class SettingPanel : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
+    // 【修改】添加了自动判断场景并设置鼠标状态的逻辑
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        // 1. 自动修复 EventSystem
         if (FindObjectOfType<EventSystem>() == null)
         {
             GameObject eventSystem = new GameObject("EventSystem_AutoCreated");
             eventSystem.AddComponent<EventSystem>();
             eventSystem.AddComponent<StandaloneInputModule>();
-            Debug.Log("🔧 [SettingPanel] 已自动修复缺失的 EventSystem");
         }
+
+        // 2. 核心修复：根据场景名自动切换鼠标状态
+        if (scene.name == "StartGame")
+        {
+            // 在开始菜单：显示鼠标，允许点击
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            Time.timeScale = 1f; // 确保时间流逝正常
+        }
+        else if (scene.name == "Museum_Main")
+        {
+            // 在游戏场景：锁定鼠标，隐藏光标 (开启沉浸式体验)
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            Time.timeScale = 1f;
+        }
+
+        // 3. 确保面板默认是关闭的
+        isPanelActive = false;
+        if (panelRoot != null) panelRoot.SetActive(false);
+
         InitUI();
         BindEvents();
     }
@@ -93,22 +113,18 @@ public class SettingPanel : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
         isPanelActive = false;
 
-        // 【新增】初始化音频组件
         uiAudioSource = GetComponent<AudioSource>();
-        if (uiAudioSource == null)
-        {
-            uiAudioSource = gameObject.AddComponent<AudioSource>();
-        }
-        // 设置为2D声音，防止因为位置听不见
+        if (uiAudioSource == null) uiAudioSource = gameObject.AddComponent<AudioSource>();
         uiAudioSource.spatialBlend = 0f;
         uiAudioSource.playOnAwake = false;
 
-        // 确保游戏开始时时间是正常的
-        Time.timeScale = 1f;
-
-        InitUI();
-        BindEvents();
+        // Start 运行时也执行一次状态检查（防止直接在场景里运行而不经过加载流程）
+        OnSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);
     }
+
+    // === 以下代码保持不变，为节省篇幅省略 (请保留原文件中的 InitUI, BindEvents, SwitchSettingPanel 等) ===
+    // ⚠️ 注意：请确保下方代码与之前我给你的版本一致
+    // ⚠️ 重点是保留 SwitchSettingPanel 中的 InternalTime 修复
 
     private void InitUI()
     {
@@ -201,7 +217,6 @@ public class SettingPanel : MonoBehaviour
         if (Input.GetKeyDown(callKey)) SwitchSettingPanel(!isPanelActive);
     }
 
-    // 【核心修改】
     public void SwitchSettingPanel(bool isOpen)
     {
         isPanelActive = isOpen;
@@ -209,17 +224,13 @@ public class SettingPanel : MonoBehaviour
 
         if (isOpen)
         {
-            // 1. 暂停游戏逻辑
             Time.timeScale = 0f;
-
-            // 【修复】使用 InternalTime 让视频跟随游戏时间暂停
             VideoPlayer[] allVideoPlayers = FindObjectsOfType<VideoPlayer>();
             foreach (var vp in allVideoPlayers)
             {
-                if (vp != null) vp.timeReference = VideoTimeReference.InternalTime; // 这里改成了 InternalTime
+                if (vp != null) vp.timeReference = VideoTimeReference.InternalTime;
             }
 
-            // 2. 播放打开音效
             if (GameData.Instance && GameData.Instance.PanelOpenSound)
             {
                 if (uiAudioSource == null) uiAudioSource = GetComponent<AudioSource>();
@@ -229,16 +240,14 @@ public class SettingPanel : MonoBehaviour
                 }
             }
 
-            // 3. 解锁鼠标
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
         else
         {
-            // 1. 恢复游戏逻辑
             Time.timeScale = 1f;
 
-            // 2. 鼠标状态恢复
+            // 关闭面板时，如果在游戏场景，需要重新锁定鼠标
             if (SceneManager.GetActiveScene().name == "StartGame")
             {
                 Cursor.lockState = CursorLockMode.None;
@@ -254,8 +263,7 @@ public class SettingPanel : MonoBehaviour
 
     public void OnExitButton()
     {
-        Time.timeScale = 1f; // 退出前必须恢复时间
-
+        Time.timeScale = 1f;
         SwitchSettingPanel(false);
         string currentScene = SceneManager.GetActiveScene().name;
 

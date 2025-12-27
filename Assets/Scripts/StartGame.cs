@@ -19,19 +19,26 @@ public class StartGame : MonoBehaviour
 
     public string nextSceneName = "Museum_Main";
 
-    // 【新增】用来记录打开帮助面板前，哪一个视频正在播放
+    // 用来记录打开帮助面板前，哪一个视频正在播放
     private VideoPlayer pausedPlayer;
 
     void Start()
     {
+        // ============================================
+        // 强制显示并解锁鼠标
+        // ============================================
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+        // ============================================
+
         // 1. 初始化UI状态
         if (uiGroup) { uiGroup.alpha = 0f; uiGroup.interactable = false; uiGroup.blocksRaycasts = false; }
         if (helpPanel) helpPanel.SetActive(false);
 
-        // 2. 绑定按钮 (修改了 Help 相关的绑定，改用专用方法)
+        // 2. 绑定按钮 
         if (startBtn) startBtn.onClick.AddListener(OnStartGame);
-        if (helpBtn) helpBtn.onClick.AddListener(OnOpenHelp);     // 改用 OnOpenHelp
-        if (closeHelpBtn) closeHelpBtn.onClick.AddListener(OnCloseHelp); // 改用 OnCloseHelp
+        if (helpBtn) helpBtn.onClick.AddListener(OnOpenHelp);
+        if (closeHelpBtn) closeHelpBtn.onClick.AddListener(OnCloseHelp);
         if (quitBtn) quitBtn.onClick.AddListener(OnQuitGame);
 
         // 3. 音频路由
@@ -42,6 +49,8 @@ public class StartGame : MonoBehaviour
         if (GameData.Instance != null && !GameData.Instance.HasPlayedIntro)
         {
             PlayIntroSequence();
+            // 注意：HasPlayedIntro = true 放在这里意味着只要开始播放了就算看过
+            // 如果你希望只有完整看完才算，可以移到 OnIntroFinished 里
             GameData.Instance.HasPlayedIntro = true;
         }
         else
@@ -50,36 +59,56 @@ public class StartGame : MonoBehaviour
         }
     }
 
-    // === 新增：打开帮助面板时的逻辑 ===
+    // 【新增】每帧检测是否需要跳过视频
+    void Update()
+    {
+        // 1. 检查 GameData 设置是否允许跳过
+        if (GameData.Instance != null && GameData.Instance.AllowSkipIntro)
+        {
+            // 2. 检查是否正在播放 Intro 视频 (introPlayer 激活且正在播放)
+            if (introPlayer != null && introPlayer.gameObject.activeSelf && introPlayer.isPlaying)
+            {
+                // 3. 检测输入：鼠标左键 (0) 或 E键
+                if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.E))
+                {
+                    Debug.Log("用户操作：跳过片头视频");
+                    // 移除事件监听，防止逻辑重复执行 (虽然 SetActive false 也会阻止)
+                    introPlayer.loopPointReached -= OnIntroFinished;
+                    // 手动调用结束逻辑
+                    OnIntroFinished(introPlayer);
+                }
+            }
+        }
+    }
+
+    // === 打开帮助面板时的逻辑 ===
     void OnOpenHelp()
     {
         PlayClick();
         if (helpPanel) helpPanel.SetActive(true);
 
-        // 检测并暂停正在播放的视频
         if (introPlayer != null && introPlayer.isPlaying)
         {
             introPlayer.Pause();
-            pausedPlayer = introPlayer; // 记住是 Intro 被暂停了
+            pausedPlayer = introPlayer;
         }
         else if (loopPlayer != null && loopPlayer.isPlaying)
         {
             loopPlayer.Pause();
-            pausedPlayer = loopPlayer; // 记住是 Loop 被暂停了
+            pausedPlayer = loopPlayer;
         }
     }
 
-    // === 新增：关闭帮助面板时的逻辑 ===
+    // === 关闭帮助面板时的逻辑 ===
     void OnCloseHelp()
     {
         PlayClick();
         if (helpPanel) helpPanel.SetActive(false);
 
-        // 恢复刚才被暂停的视频
         if (pausedPlayer != null)
         {
             pausedPlayer.Play();
-            pausedPlayer = null; // 清空记录
+            pausedPlayer = null;
         }
     }
 
@@ -99,18 +128,27 @@ public class StartGame : MonoBehaviour
     {
         if (introPlayer) introPlayer.gameObject.SetActive(false);
         OnIntroFinished(null);
+        // 如果是直接跳过（比如第二次进入游戏），UI直接显示，不需要渐变
         if (uiGroup) { uiGroup.alpha = 1f; uiGroup.interactable = true; uiGroup.blocksRaycasts = true; }
     }
 
     void OnIntroFinished(VideoPlayer vp)
     {
+        // 开启循环背景视频
         if (loopPlayer)
         {
             loopPlayer.gameObject.SetActive(true);
-            loopPlayer.isLooping = true; // 强制开启循环
+            loopPlayer.isLooping = true;
             loopPlayer.Play();
         }
-        if (introPlayer) { introPlayer.gameObject.SetActive(false); }
+        // 关闭片头视频
+        if (introPlayer)
+        {
+            introPlayer.Stop(); // 确保停止
+            introPlayer.gameObject.SetActive(false);
+        }
+
+        // 淡入 UI
         if (uiGroup && uiGroup.alpha < 1f) StartCoroutine(FadeInUI());
     }
 
@@ -141,7 +179,6 @@ public class StartGame : MonoBehaviour
 
     void OnStartGame()
     {
-        // 强制恢复时间，防止意外暂停带入下一关
         Time.timeScale = 1f;
         PlayClick();
         SceneLoading.LoadLevel(nextSceneName);

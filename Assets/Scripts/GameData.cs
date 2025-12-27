@@ -31,8 +31,7 @@ public class GameData : MonoBehaviour
     [Header("=== 3. 全局通用音频资源 ===")]
     public AudioClip ButtonClickSound; // 通用的点击“咔哒”声
     public AudioClip HighlightSound;   // 通用的高亮提示音
-    // 【新增】面板打开音效
-    public AudioClip PanelOpenSound;
+    public AudioClip PanelOpenSound;   // 面板打开音效
 
     [Header("=== 4. 游戏核心参数 ===")]
     public Color HighlightColor = Color.yellow;
@@ -42,6 +41,12 @@ public class GameData : MonoBehaviour
     public float InteractionDistance = 10.0f;
     public float StepDistance = 1.8f;
     [HideInInspector] public KeyCode VideoPauseKey = KeyCode.Space;
+
+    // 【新增】是否允许跳过片头视频
+    [Space(10)]
+    [Header("=== 5. 交互设置 ===")]
+    [Tooltip("勾选后，玩家可以通过点击鼠标左键或按E键跳过开场视频")]
+    public bool AllowSkipIntro = true;
 
     // 玩家位置记忆
     public bool ShouldRestorePosition = false;
