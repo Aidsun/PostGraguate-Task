@@ -3,7 +3,23 @@
   "WorkspaceRootPath": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\videodisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Library\\PackageCache\\com.atteneder.gltfast@e35dbd7f15\\Runtime\\Shader\\Built-In\\glTFUnlit.shader||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Library\\PackageCache\\com.atteneder.gltfast@e35dbd7f15\\Runtime\\Shader\\Built-In\\glTFUnlit.shader||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|c:\\users\\aidsu\\desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\redgeine\\assets\\scripts\\startgame.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\startgame.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\assets\\scripts\\panoramadisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\panoramadisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\assets\\scripts\\imagedisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\imagedisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\assets\\scripts\\videodisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5805E78D-48A0-6440-8327-DDD37FCA32F2}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\videodisplaycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -23,25 +39,74 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "VideoDisplayController.cs",
-              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\VideoDisplayController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\VideoDisplayController.cs",
-              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\VideoDisplayController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\VideoDisplayController.cs",
-              "ViewState": "AgIAAB8AAAAAAAAAAAAQwB8AAAAtAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-14T02:45:11.226Z",
+              "Title": "glTFUnlit.shader",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Library\\PackageCache\\com.atteneder.gltfast@e35dbd7f15\\Runtime\\Shader\\Built-In\\glTFUnlit.shader",
+              "RelativeDocumentMoniker": "Library\\PackageCache\\com.atteneder.gltfast@e35dbd7f15\\Runtime\\Shader\\Built-In\\glTFUnlit.shader",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Library\\PackageCache\\com.atteneder.gltfast@e35dbd7f15\\Runtime\\Shader\\Built-In\\glTFUnlit.shader",
+              "RelativeToolTip": "Library\\PackageCache\\com.atteneder.gltfast@e35dbd7f15\\Runtime\\Shader\\Built-In\\glTFUnlit.shader",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002777|",
+              "WhenOpened": "2026-01-24T14:26:37.327Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "StartGame.cs",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\StartGame.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StartGame.cs",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\StartGame.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StartGame.cs",
+              "ViewState": "AgIAAKMAAAAAAAAAAADwv8EAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-15T01:32:52.701Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PanoramaDisplayController.cs",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\PanoramaDisplayController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\PanoramaDisplayController.cs",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\PanoramaDisplayController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\PanoramaDisplayController.cs",
+              "ViewState": "AgIAAEIAAAAAAAAAAADwv0kAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-14T12:52:33.324Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ImageDisplayController.cs",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\ImageDisplayController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\ImageDisplayController.cs",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\ImageDisplayController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\ImageDisplayController.cs",
+              "ViewState": "AgIAADQAAAAAAAAAAADwv1IAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-14T12:52:29.246Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "VideoDisplayController.cs",
+              "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\VideoDisplayController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\VideoDisplayController.cs",
+              "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\VideoDisplayController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\VideoDisplayController.cs",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAuwF4AAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-14T02:45:11.226Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "AutoScrollText.cs",
               "DocumentMoniker": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\AutoScrollText.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\AutoScrollText.cs",
               "ToolTip": "C:\\Users\\Aidsu\\Desktop\\\u6BD5\u4E1A\u8BBE\u8BA1\\\u9879\u76EE\\RedGeine\\Assets\\Scripts\\AutoScrollText.cs",
               "RelativeToolTip": "Assets\\Scripts\\AutoScrollText.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAAC4AAAAAAAAAAADwv0IAAAA7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-14T02:44:43.723Z"
             }

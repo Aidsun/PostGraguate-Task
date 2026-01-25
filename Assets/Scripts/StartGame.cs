@@ -19,17 +19,13 @@ public class StartGame : MonoBehaviour
 
     public string nextSceneName = "Museum_Main";
 
-    // 用来记录打开帮助面板前，哪一个视频正在播放
     private VideoPlayer pausedPlayer;
 
     void Start()
     {
-        // ============================================
         // 强制显示并解锁鼠标
-        // ============================================
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
-        // ============================================
 
         // 1. 初始化UI状态
         if (uiGroup) { uiGroup.alpha = 0f; uiGroup.interactable = false; uiGroup.blocksRaycasts = false; }
@@ -49,8 +45,6 @@ public class StartGame : MonoBehaviour
         if (GameData.Instance != null && !GameData.Instance.HasPlayedIntro)
         {
             PlayIntroSequence();
-            // 注意：HasPlayedIntro = true 放在这里意味着只要开始播放了就算看过
-            // 如果你希望只有完整看完才算，可以移到 OnIntroFinished 里
             GameData.Instance.HasPlayedIntro = true;
         }
         else
@@ -59,32 +53,26 @@ public class StartGame : MonoBehaviour
         }
     }
 
-    // 【新增】每帧检测是否需要跳过视频
     void Update()
     {
-        // 1. 检查 GameData 设置是否允许跳过
+        // 跳过逻辑
         if (GameData.Instance != null && GameData.Instance.AllowSkipIntro)
         {
-            // 2. 检查是否正在播放 Intro 视频 (introPlayer 激活且正在播放)
             if (introPlayer != null && introPlayer.gameObject.activeSelf && introPlayer.isPlaying)
             {
-                // 3. 检测输入：鼠标左键 (0) 或 E键
-                if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.E))
+                if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.F))
                 {
                     Debug.Log("用户操作：跳过片头视频");
-                    // 移除事件监听，防止逻辑重复执行 (虽然 SetActive false 也会阻止)
                     introPlayer.loopPointReached -= OnIntroFinished;
-                    // 手动调用结束逻辑
                     OnIntroFinished(introPlayer);
                 }
             }
         }
     }
 
-    // === 打开帮助面板时的逻辑 ===
     void OnOpenHelp()
     {
-        PlayClick();
+        if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
         if (helpPanel) helpPanel.SetActive(true);
 
         if (introPlayer != null && introPlayer.isPlaying)
@@ -99,10 +87,9 @@ public class StartGame : MonoBehaviour
         }
     }
 
-    // === 关闭帮助面板时的逻辑 ===
     void OnCloseHelp()
     {
-        PlayClick();
+        if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
         if (helpPanel) helpPanel.SetActive(false);
 
         if (pausedPlayer != null)
@@ -128,65 +115,76 @@ public class StartGame : MonoBehaviour
     {
         if (introPlayer) introPlayer.gameObject.SetActive(false);
         OnIntroFinished(null);
-        // 如果是直接跳过（比如第二次进入游戏），UI直接显示，不需要渐变
-        if (uiGroup) { uiGroup.alpha = 1f; uiGroup.interactable = true; uiGroup.blocksRaycasts = true; }
     }
 
+    // =========================================================
+    // 【核心修改】视频切换逻辑
+    // =========================================================
     void OnIntroFinished(VideoPlayer vp)
     {
-        // 开启循环背景视频
+        // 启动协程来平滑切换
+        StartCoroutine(SwitchVideoSmoothly());
+
+        // UI 直接显示
+        if (uiGroup)
+        {
+            uiGroup.alpha = 1f;
+            uiGroup.interactable = true;
+            uiGroup.blocksRaycasts = true;
+        }
+    }
+
+    // 新增：平滑切换协程
+    IEnumerator SwitchVideoSmoothly()
+    {
+        // 1. 先激活并播放循环视频 (此时 introPlayer 还没关，挡在后面)
         if (loopPlayer)
         {
             loopPlayer.gameObject.SetActive(true);
             loopPlayer.isLooping = true;
             loopPlayer.Play();
         }
-        // 关闭片头视频
-        if (introPlayer)
+
+        // 2. 关键点：等待几帧，直到 loopPlayer 真正准备好并输出了画面
+        if (loopPlayer)
         {
-            introPlayer.Stop(); // 确保停止
-            introPlayer.gameObject.SetActive(false);
+            // 等待直到状态变为 Playing
+            while (!loopPlayer.isPlaying)
+            {
+                yield return null;
+            }
+            // 【双重保险】额外多等 2 帧，确保画面数据已经从 GPU 渲染到了屏幕上
+            // 这一步能彻底消灭“闪烁”
+            yield return null;
+            yield return null;
         }
 
-        // 淡入 UI
-        if (uiGroup && uiGroup.alpha < 1f) StartCoroutine(FadeInUI());
+        // 3. 新视频已经盖在上面了，现在安全关闭旧视频
+        if (introPlayer)
+        {
+            introPlayer.Stop();
+            introPlayer.gameObject.SetActive(false);
+        }
     }
 
     void RouteAudioToBgm(VideoPlayer vp)
     {
         if (vp == null || AudioManager.Instance == null || AudioManager.Instance.BgmSource == null) return;
-
         vp.audioOutputMode = VideoAudioOutputMode.AudioSource;
         vp.EnableAudioTrack(0, true);
         vp.SetTargetAudioSource(0, AudioManager.Instance.BgmSource);
     }
 
-    IEnumerator FadeInUI()
-    {
-        float timer = 0f;
-        while (timer < 1.5f)
-        {
-            timer += Time.deltaTime;
-            uiGroup.alpha = Mathf.Lerp(0f, 1f, timer / 1.5f);
-            yield return null;
-        }
-        uiGroup.alpha = 1f;
-        uiGroup.interactable = true;
-        uiGroup.blocksRaycasts = true;
-    }
-
-    void PlayClick() { if (AudioManager.Instance) AudioManager.Instance.PlayClickSound(); }
-
     void OnStartGame()
     {
         Time.timeScale = 1f;
-        PlayClick();
+        if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
         SceneLoading.LoadLevel(nextSceneName);
     }
 
     void OnQuitGame()
     {
-        PlayClick();
+        if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
