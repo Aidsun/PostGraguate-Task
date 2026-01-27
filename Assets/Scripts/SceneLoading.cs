@@ -30,7 +30,7 @@ public class SceneLoading : MonoBehaviour
         if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
 
         audioSource.playOnAwake = false;
-        audioSource.loop = true;
+        audioSource.loop = false;
 
         // 【关键修复】如果配置了 Mixer 组，就应用上去
         if (outputGroup != null)

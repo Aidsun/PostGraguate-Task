@@ -177,8 +177,26 @@ public class SettingPanel : MonoBehaviour
         if (callPanelDropdown) { callPanelDropdown.onValueChanged.RemoveAllListeners(); callPanelDropdown.onValueChanged.AddListener((idx) => KeyConfig.CallPanelKey = dropdownKeys[idx]); }
         if (videoControlDropdown) { videoControlDropdown.onValueChanged.RemoveAllListeners(); videoControlDropdown.onValueChanged.AddListener((idx) => { if (GameData.Instance) GameData.Instance.VideoPauseKey = dropdownKeys[idx]; }); }
 
-        if (saveButton) { saveButton.onClick.RemoveAllListeners(); saveButton.onClick.AddListener(SaveSettings); }
-        if (exitButton) { exitButton.onClick.RemoveAllListeners(); exitButton.onClick.AddListener(OnExitButton); }
+        // =========================================================
+        // 【核心修改】给按钮绑定点击音效
+        // =========================================================
+        if (saveButton)
+        {
+            saveButton.onClick.RemoveAllListeners();
+            saveButton.onClick.AddListener(() => {
+                PlayButtonSound(); // 先播声音
+                SaveSettings();    // 再保存
+            });
+        }
+
+        if (exitButton)
+        {
+            exitButton.onClick.RemoveAllListeners();
+            exitButton.onClick.AddListener(() => {
+                PlayButtonSound(); // 先播声音
+                OnExitButton();    // 再执行退出逻辑
+            });
+        }
     }
 
     void BindInput(TMP_InputField input, System.Action<float> onValChange)
@@ -253,7 +271,6 @@ public class SettingPanel : MonoBehaviour
         }
     }
 
-    // 【核心修改】OnExitButton 逻辑
     public void OnExitButton()
     {
         Time.timeScale = 1f;
@@ -276,28 +293,18 @@ public class SettingPanel : MonoBehaviour
         {
             if (GameData.Instance)
             {
-                // =========================================================
-                // 【保险箱机制】检查是否有临时存档
-                // =========================================================
                 if (GameData.Instance.TempSafeState.HasData)
                 {
-                    // 1. 取出存档
                     var safeData = GameData.Instance.TempSafeState;
                     GameData.Instance.LastPlayerPosition = safeData.Position;
                     GameData.Instance.LastPlayerRotation = safeData.Rotation;
                     GameData.Instance.WasFirstPerson = safeData.IsFirstPerson;
-
-                    // 2. 标记需要恢复
                     GameData.Instance.ShouldRestorePosition = true;
-
-                    // 3. 清空保险箱
                     GameData.Instance.TempSafeState.HasData = false;
-
                     Debug.Log("[SettingPanel] 检测到临时存档，已恢复状态并清空存档。");
                 }
                 else
                 {
-                    // 如果没有存档，则不进行恢复 (默认去出生点)
                     GameData.Instance.ShouldRestorePosition = false;
                 }
             }
@@ -309,5 +316,19 @@ public class SettingPanel : MonoBehaviour
     {
         Debug.Log("设置已保存");
         SwitchSettingPanel(false);
+    }
+
+    // === 新增：播放按钮音效辅助方法 ===
+    private void PlayButtonSound()
+    {
+        if (GameData.Instance && GameData.Instance.ButtonClickSound)
+        {
+            if (uiAudioSource == null) uiAudioSource = GetComponent<AudioSource>();
+            if (uiAudioSource != null)
+            {
+                // 使用 PlayOneShot 允许多重音效叠加
+                uiAudioSource.PlayOneShot(GameData.Instance.ButtonClickSound, GameData.Instance.ButtonVolume);
+            }
+        }
     }
 }

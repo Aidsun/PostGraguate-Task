@@ -41,9 +41,18 @@ public class StartGame : MonoBehaviour
         RouteAudioToBgm(introPlayer);
         RouteAudioToBgm(loopPlayer);
 
-        // 4. 流程控制
+        // 4. 流程控制与预加载
         if (GameData.Instance != null && !GameData.Instance.HasPlayedIntro)
         {
+            // === 【关键修改】 ===
+            // 立即开始准备第二段视频，让它在后台加载数据
+            if (loopPlayer)
+            {
+                loopPlayer.gameObject.SetActive(true); // 必须激活才能 Prepare，但我们暂不 Play
+                loopPlayer.playOnAwake = false;       // 确保 Inspector 里也是关的，防止自动播
+                loopPlayer.Prepare();                 // 【核心】只预加载，不播放
+            }
+
             PlayIntroSequence();
             GameData.Instance.HasPlayedIntro = true;
         }
@@ -70,38 +79,29 @@ public class StartGame : MonoBehaviour
         }
     }
 
+    // ... (中间的 Help 面板逻辑保持不变) ...
     void OnOpenHelp()
     {
         if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
         if (helpPanel) helpPanel.SetActive(true);
 
-        if (introPlayer != null && introPlayer.isPlaying)
-        {
-            introPlayer.Pause();
-            pausedPlayer = introPlayer;
-        }
-        else if (loopPlayer != null && loopPlayer.isPlaying)
-        {
-            loopPlayer.Pause();
-            pausedPlayer = loopPlayer;
-        }
+        if (introPlayer != null && introPlayer.isPlaying) { introPlayer.Pause(); pausedPlayer = introPlayer; }
+        else if (loopPlayer != null && loopPlayer.isPlaying) { loopPlayer.Pause(); pausedPlayer = loopPlayer; }
     }
 
     void OnCloseHelp()
     {
         if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
         if (helpPanel) helpPanel.SetActive(false);
-
-        if (pausedPlayer != null)
-        {
-            pausedPlayer.Play();
-            pausedPlayer = null;
-        }
+        if (pausedPlayer != null) { pausedPlayer.Play(); pausedPlayer = null; }
     }
+    // ... (中间逻辑结束) ...
 
     void PlayIntroSequence()
     {
-        if (loopPlayer) loopPlayer.gameObject.SetActive(false);
+        // 注意：这里不要把 loopPlayer SetActive(false)，因为我们正在 Prepare 它
+        // 只要 introPlayer 挡在它前面（Render Order 更高）或者 loopPlayer 还没 Play 即可
+
         if (introPlayer)
         {
             introPlayer.gameObject.SetActive(true);
@@ -118,14 +118,13 @@ public class StartGame : MonoBehaviour
     }
 
     // =========================================================
-    // 【核心修改】视频切换逻辑
+    // 【核心修改】零延迟切换协程
     // =========================================================
     void OnIntroFinished(VideoPlayer vp)
     {
-        // 启动协程来平滑切换
-        StartCoroutine(SwitchVideoSmoothly());
+        StartCoroutine(SwitchVideoSeamlessly());
 
-        // UI 直接显示
+        // UI 显示
         if (uiGroup)
         {
             uiGroup.alpha = 1f;
@@ -134,32 +133,30 @@ public class StartGame : MonoBehaviour
         }
     }
 
-    // 新增：平滑切换协程
-    IEnumerator SwitchVideoSmoothly()
+    IEnumerator SwitchVideoSeamlessly()
     {
-        // 1. 先激活并播放循环视频 (此时 introPlayer 还没关，挡在后面)
+        // 1. 此时 loopPlayer 应该已经 Prepare 完成了
         if (loopPlayer)
         {
+            // 确保物体是激活的
             loopPlayer.gameObject.SetActive(true);
             loopPlayer.isLooping = true;
-            loopPlayer.Play();
-        }
 
-        // 2. 关键点：等待几帧，直到 loopPlayer 真正准备好并输出了画面
-        if (loopPlayer)
-        {
-            // 等待直到状态变为 Playing
-            while (!loopPlayer.isPlaying)
+            // 因为已经在 Start() 里 Prepare 过了，这里调用 Play 会非常快
+            loopPlayer.Play();
+
+            // 2. 【双重保险检测】
+            // 我们不检测 isPrepared (因为可能还没好)，也不只检测 isPlaying
+            // 我们检测 frame > 0，这意味着 GPU 真的已经渲染出了至少一帧画面
+
+            // 等待直到 loopPlayer 真正输出了画面
+            while (loopPlayer.frame <= 0)
             {
                 yield return null;
             }
-            // 【双重保险】额外多等 2 帧，确保画面数据已经从 GPU 渲染到了屏幕上
-            // 这一步能彻底消灭“闪烁”
-            yield return null;
-            yield return null;
         }
 
-        // 3. 新视频已经盖在上面了，现在安全关闭旧视频
+        // 3. 只有当新画面确实渲染出来覆盖住屏幕了，才关掉旧的
         if (introPlayer)
         {
             introPlayer.Stop();

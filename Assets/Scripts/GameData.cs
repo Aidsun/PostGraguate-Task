@@ -54,7 +54,7 @@ public class GameData : MonoBehaviour
 
     public float MoveSpeed = 5.0f;
     public float JumpHeight = 1.2f;
-    public float InteractionDistance = 10.0f;
+    public float InteractionDistance = 20.0f;
     public float StepDistance = 1.8f;
     [HideInInspector] public KeyCode VideoPauseKey = KeyCode.Space;
 
