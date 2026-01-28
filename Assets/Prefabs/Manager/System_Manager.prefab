@@ -848,13 +848,14 @@ MonoBehaviour:
     IsFirstPerson: 0
     HasData: 0
   HasPlayedIntro: 0
-  BgmVolume: 0.493
+  BgmVolume: 0.1
   VideoVolume: 0.498
   VoiceVolume: 0.498
   ButtonVolume: 0.498
   ButtonClickSound: {fileID: 8300000, guid: 665e5206ee3baa843926a8dcbdea8424, type: 3}
   HighlightSound: {fileID: 8300000, guid: 69f1609a342b058458b2b927b7eb6489, type: 3}
   PanelOpenSound: {fileID: 8300000, guid: d35e5519f63fbf7409e30b75db85246e, type: 3}
+  MainThemeSong: {fileID: 8300000, guid: 7c12ea60e74181f40b2d0287be5ef232, type: 3}
   HighlightColor: {r: 0.99313337, g: 1, b: 0.1566037, a: 1}
   MoveSpeed: 5
   JumpHeight: 1.2
@@ -862,6 +863,7 @@ MonoBehaviour:
   StepDistance: 2
   VideoPauseKey: 32
   AllowSkipIntro: 1
+  CompletedGuideIds: []
   ShouldRestorePosition: 0
   LastPlayerPosition: {x: 0, y: 0, z: 0}
   LastPlayerRotation: {x: 0, y: 0, z: 0, w: 0}

@@ -20,7 +20,7 @@ public class GameData : MonoBehaviour
     }
 
     // =========================================================
-    // 【新增】定义一个结构体，把位置、旋转、视角打包在一起
+    // 【核心结构】保险箱数据
     // =========================================================
     [System.Serializable]
     public struct PlayerStateData
@@ -28,30 +28,29 @@ public class GameData : MonoBehaviour
         public Vector3 Position;
         public Quaternion Rotation;
         public bool IsFirstPerson;
-        public bool HasData; // 标记：箱子里有没有东西
+        public bool HasData;
     }
-
-    // 【新增】这就是那个“保险箱” (临时存档槽)
     public PlayerStateData TempSafeState;
+
     // =========================================================
 
     [Header("=== 1. 全局状态记录 ===")]
     public bool HasPlayedIntro = false;
 
-    [Header("=== 2. 全局音量控制 (数据源, 0-1) ===")]
+    [Header("=== 2. 全局音量控制 ===")]
     [Range(0, 1)] public float BgmVolume = 1.0f;
     [Range(0, 1)] public float VideoVolume = 1.0f;
     [Range(0, 1)] public float VoiceVolume = 1.0f;
     [Range(0, 1)] public float ButtonVolume = 1.0f;
 
-    [Header("=== 3. 全局通用音频资源 ===")]
-    public AudioClip ButtonClickSound; // 通用的点击“咔哒”声
-    public AudioClip HighlightSound;   // 通用的高亮提示音
-    public AudioClip PanelOpenSound;   // 面板打开音效
+    [Header("=== 3. 全局音频资源 ===")]
+    public AudioClip ButtonClickSound;
+    public AudioClip HighlightSound;
+    public AudioClip PanelOpenSound;
+    public AudioClip MainThemeSong;
 
-    [Header("=== 4. 游戏核心参数 ===")]
+    [Header("=== 4. 游戏参数 ===")]
     public Color HighlightColor = Color.yellow;
-
     public float MoveSpeed = 5.0f;
     public float JumpHeight = 1.2f;
     public float InteractionDistance = 20.0f;
@@ -60,10 +59,12 @@ public class GameData : MonoBehaviour
 
     [Space(10)]
     [Header("=== 5. 交互设置 ===")]
-    [Tooltip("勾选后，玩家可以通过点击鼠标左键或按E键跳过开场视频")]
     public bool AllowSkipIntro = true;
 
-    // 玩家位置记忆 (通用变量)
+    // 【新增】永久记录已触发的引导ID (防复活名单)
+    public List<string> CompletedGuideIds = new List<string>();
+
+    // 玩家位置记忆
     public bool ShouldRestorePosition = false;
     public Vector3 LastPlayerPosition;
     public Quaternion LastPlayerRotation;
@@ -73,26 +74,17 @@ public class GameData : MonoBehaviour
     public List<Sprite> ContentBackgrounds;
     public List<Sprite> LoadingBackgrounds;
 
-    // --- 跨场景传递的数据包 ---
+    // --- 数据包定义 ---
     [System.Serializable]
-    public class ImagePacket
-    {
-        public string Title; public Sprite ImageContent; public string Description; public AudioClip VoiceClip; public bool AutoPlayVoice;
-    }
+    public class ImagePacket { public string Title; public Sprite ImageContent; public string Description; public AudioClip VoiceClip; public bool AutoPlayVoice; }
     public static ImagePacket CurrentImage;
 
     [System.Serializable]
-    public class VideoPacket
-    {
-        public string Title; public VideoClip VideoContent; public string Description; public AudioClip VoiceClip; public bool AutoPlayVoice;
-    }
+    public class VideoPacket { public string Title; public VideoClip VideoContent; public string Description; public AudioClip VoiceClip; public bool AutoPlayVoice; }
     public static VideoPacket CurrentVideo;
 
     [System.Serializable]
-    public class PanoramaPacket
-    {
-        public string Title; public VideoClip PanoramaContent; public AudioClip VoiceClip; public bool AutoPlayVoice;
-    }
+    public class PanoramaPacket { public string Title; public VideoClip PanoramaContent; public AudioClip VoiceClip; public bool AutoPlayVoice; }
     public static PanoramaPacket CurrentPanorama;
 
     // 辅助方法

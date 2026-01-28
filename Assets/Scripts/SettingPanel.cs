@@ -15,7 +15,7 @@ public class SettingPanel : MonoBehaviour
     public GameObject panelRoot;
 
     [Space(10)]
-    [Header("=== 🔊 音量滑块绑定 (修改GameData) ===")]
+    [Header("=== 🔊 音量滑块绑定 ===")]
     public Slider bgmVolumeSlider;
     public Slider videoVolumeSlider;
     public Slider descriptionVolumeSlider;
@@ -34,67 +34,34 @@ public class SettingPanel : MonoBehaviour
     public Button exitButton;
 
     [HideInInspector] public bool isPanelActive = false;
-
     private AudioSource uiAudioSource;
 
     [System.Serializable]
-    public class InputConfig
-    {
-        public KeyCode ViewSwitchKey = KeyCode.T;
-        public KeyCode CallPanelKey = KeyCode.Tab;
-    }
+    public class InputConfig { public KeyCode ViewSwitchKey = KeyCode.T; public KeyCode CallPanelKey = KeyCode.Tab; }
     public static InputConfig KeyConfig = new InputConfig();
 
-    private readonly List<KeyCode> dropdownKeys = new List<KeyCode>() {
-        KeyCode.T, KeyCode.Escape, KeyCode.Space, KeyCode.Return, KeyCode.Tab,
-        KeyCode.Q, KeyCode.E, KeyCode.R, KeyCode.F, KeyCode.LeftShift, KeyCode.LeftAlt
-    };
+    private readonly List<KeyCode> dropdownKeys = new List<KeyCode>() { KeyCode.T, KeyCode.Escape, KeyCode.Space, KeyCode.Return, KeyCode.Tab, KeyCode.Q, KeyCode.E, KeyCode.R, KeyCode.F, KeyCode.LeftShift, KeyCode.LeftAlt };
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
+        else { Destroy(gameObject); }
     }
 
-    private void OnEnable()
-    {
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    private void OnDisable()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
+    private void OnEnable() { SceneManager.sceneLoaded += OnSceneLoaded; }
+    private void OnDisable() { SceneManager.sceneLoaded -= OnSceneLoaded; }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (FindObjectOfType<EventSystem>() == null)
         {
-            GameObject eventSystem = new GameObject("EventSystem_AutoCreated");
+            var eventSystem = new GameObject("EventSystem_AutoCreated");
             eventSystem.AddComponent<EventSystem>();
             eventSystem.AddComponent<StandaloneInputModule>();
         }
 
-        // 根据场景设置鼠标状态
-        if (scene.name == "StartGame")
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            Time.timeScale = 1f;
-        }
-        else if (scene.name == "Museum_Main")
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-            Time.timeScale = 1f;
-        }
+        if (scene.name == "StartGame") { Cursor.lockState = CursorLockMode.None; Cursor.visible = true; Time.timeScale = 1f; }
+        else if (scene.name == "Museum_Main") { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; Time.timeScale = 1f; }
 
         isPanelActive = false;
         if (panelRoot != null) panelRoot.SetActive(false);
@@ -107,11 +74,8 @@ public class SettingPanel : MonoBehaviour
     {
         SetupPanelLayer();
         if (panelRoot != null) panelRoot.SetActive(false);
-        isPanelActive = false;
-
         uiAudioSource = GetComponent<AudioSource>();
         if (uiAudioSource == null) uiAudioSource = gameObject.AddComponent<AudioSource>();
-        uiAudioSource.spatialBlend = 0f;
         uiAudioSource.playOnAwake = false;
 
         OnSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);
@@ -125,6 +89,11 @@ public class SettingPanel : MonoBehaviour
             if (videoVolumeSlider) videoVolumeSlider.SetValueWithoutNotify(GameData.Instance.VideoVolume);
             if (descriptionVolumeSlider) descriptionVolumeSlider.SetValueWithoutNotify(GameData.Instance.VoiceVolume);
             if (buttonVolumeSlider) buttonVolumeSlider.SetValueWithoutNotify(GameData.Instance.ButtonVolume);
+
+            UpdateSliderText(bgmVolumeSlider, GameData.Instance.BgmVolume);
+            UpdateSliderText(videoVolumeSlider, GameData.Instance.VideoVolume);
+            UpdateSliderText(descriptionVolumeSlider, GameData.Instance.VoiceVolume);
+            UpdateSliderText(buttonVolumeSlider, GameData.Instance.ButtonVolume);
 
             if (moveSpeedInput) moveSpeedInput.text = GameData.Instance.MoveSpeed.ToString();
             if (jumpHeightInput) jumpHeightInput.text = GameData.Instance.JumpHeight.ToString();
@@ -146,26 +115,26 @@ public class SettingPanel : MonoBehaviour
 
         if (bgmVolumeSlider) bgmVolumeSlider.onValueChanged.AddListener((v) => {
             if (GameData.Instance) GameData.Instance.BgmVolume = v;
-            var helper = bgmVolumeSlider.GetComponentInChildren<UI_SliderValue>();
-            if (helper) helper.UpdateText(v);
+            if (AudioManager.Instance) AudioManager.Instance.UpdateMixerVolume();
+            UpdateSliderText(bgmVolumeSlider, v);
         });
 
         if (videoVolumeSlider) videoVolumeSlider.onValueChanged.AddListener((v) => {
             if (GameData.Instance) GameData.Instance.VideoVolume = v;
-            var helper = videoVolumeSlider.GetComponentInChildren<UI_SliderValue>();
-            if (helper) helper.UpdateText(v);
+            if (AudioManager.Instance) AudioManager.Instance.UpdateMixerVolume();
+            UpdateSliderText(videoVolumeSlider, v);
         });
 
         if (descriptionVolumeSlider) descriptionVolumeSlider.onValueChanged.AddListener((v) => {
             if (GameData.Instance) GameData.Instance.VoiceVolume = v;
-            var helper = descriptionVolumeSlider.GetComponentInChildren<UI_SliderValue>();
-            if (helper) helper.UpdateText(v);
+            if (AudioManager.Instance) AudioManager.Instance.UpdateMixerVolume();
+            UpdateSliderText(descriptionVolumeSlider, v);
         });
 
         if (buttonVolumeSlider) buttonVolumeSlider.onValueChanged.AddListener((v) => {
             if (GameData.Instance) GameData.Instance.ButtonVolume = v;
-            var helper = buttonVolumeSlider.GetComponentInChildren<UI_SliderValue>();
-            if (helper) helper.UpdateText(v);
+            if (AudioManager.Instance) AudioManager.Instance.UpdateMixerVolume();
+            UpdateSliderText(buttonVolumeSlider, v);
         });
 
         BindInput(moveSpeedInput, (v) => GameData.Instance.MoveSpeed = v);
@@ -177,26 +146,16 @@ public class SettingPanel : MonoBehaviour
         if (callPanelDropdown) { callPanelDropdown.onValueChanged.RemoveAllListeners(); callPanelDropdown.onValueChanged.AddListener((idx) => KeyConfig.CallPanelKey = dropdownKeys[idx]); }
         if (videoControlDropdown) { videoControlDropdown.onValueChanged.RemoveAllListeners(); videoControlDropdown.onValueChanged.AddListener((idx) => { if (GameData.Instance) GameData.Instance.VideoPauseKey = dropdownKeys[idx]; }); }
 
-        // =========================================================
-        // 【核心修改】给按钮绑定点击音效
-        // =========================================================
-        if (saveButton)
-        {
-            saveButton.onClick.RemoveAllListeners();
-            saveButton.onClick.AddListener(() => {
-                PlayButtonSound(); // 先播声音
-                SaveSettings();    // 再保存
-            });
-        }
+        if (saveButton) { saveButton.onClick.RemoveAllListeners(); saveButton.onClick.AddListener(() => { PlayButtonSound(); SaveSettings(); }); }
+        if (exitButton) { exitButton.onClick.RemoveAllListeners(); exitButton.onClick.AddListener(() => { PlayButtonSound(); OnExitButton(); }); }
+    }
 
-        if (exitButton)
-        {
-            exitButton.onClick.RemoveAllListeners();
-            exitButton.onClick.AddListener(() => {
-                PlayButtonSound(); // 先播声音
-                OnExitButton();    // 再执行退出逻辑
-            });
-        }
+    void UpdateSliderText(Slider s, float val)
+    {
+        if (s == null) return;
+        var helper = s.GetComponent<UI_SliderValue>();
+        if (helper == null) helper = s.GetComponentInChildren<UI_SliderValue>();
+        if (helper) helper.UpdateText(val);
     }
 
     void BindInput(TMP_InputField input, System.Action<float> onValChange)
@@ -226,6 +185,9 @@ public class SettingPanel : MonoBehaviour
         if (Input.GetKeyDown(callKey)) SwitchSettingPanel(!isPanelActive);
     }
 
+    // =========================================================
+    // 【核心修复】关闭面板时，检查是否有其他UI正开着
+    // =========================================================
     public void SwitchSettingPanel(bool isOpen)
     {
         isPanelActive = isOpen;
@@ -234,23 +196,14 @@ public class SettingPanel : MonoBehaviour
         if (isOpen)
         {
             Time.timeScale = 0f;
-
-            // 强制所有视频跟随游戏时间 (InternalTime)
             VideoPlayer[] allVideoPlayers = FindObjectsOfType<VideoPlayer>();
-            foreach (var vp in allVideoPlayers)
-            {
-                if (vp != null) vp.timeReference = VideoTimeReference.InternalTime;
-            }
+            foreach (var vp in allVideoPlayers) { if (vp != null) vp.timeReference = VideoTimeReference.InternalTime; }
 
             if (GameData.Instance && GameData.Instance.PanelOpenSound)
             {
                 if (uiAudioSource == null) uiAudioSource = GetComponent<AudioSource>();
-                if (uiAudioSource != null)
-                {
-                    uiAudioSource.PlayOneShot(GameData.Instance.PanelOpenSound, GameData.Instance.ButtonVolume);
-                }
+                if (uiAudioSource != null) uiAudioSource.PlayOneShot(GameData.Instance.PanelOpenSound, GameData.Instance.ButtonVolume);
             }
-
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
@@ -258,13 +211,23 @@ public class SettingPanel : MonoBehaviour
         {
             Time.timeScale = 1f;
 
-            if (SceneManager.GetActiveScene().name == "StartGame")
+            // 1. 先检查 TutorPanel 是否开着
+            bool isTutorOpen = false;
+            if (TutorPanel.Instance && TutorPanel.Instance.panelObject.activeSelf) isTutorOpen = true;
+
+            // 2. 检查 答题面板 是否开着 (QuestionManager)
+            bool isQuestionOpen = false;
+            if (QuestionManager.Instance && QuestionManager.Instance.QuestionPanel && QuestionManager.Instance.QuestionPanel.activeSelf) isQuestionOpen = true;
+
+            // 只有当：是开始界面 OR 提示面板开着 OR 答题面板开着，才保留鼠标
+            if (SceneManager.GetActiveScene().name == "StartGame" || isTutorOpen || isQuestionOpen)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
             else
             {
+                // 否则才锁鼠标
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
@@ -301,34 +264,13 @@ public class SettingPanel : MonoBehaviour
                     GameData.Instance.WasFirstPerson = safeData.IsFirstPerson;
                     GameData.Instance.ShouldRestorePosition = true;
                     GameData.Instance.TempSafeState.HasData = false;
-                    Debug.Log("[SettingPanel] 检测到临时存档，已恢复状态并清空存档。");
                 }
-                else
-                {
-                    GameData.Instance.ShouldRestorePosition = false;
-                }
+                else { GameData.Instance.ShouldRestorePosition = false; }
             }
             SceneLoading.LoadLevel("Museum_Main");
         }
     }
 
-    private void SaveSettings()
-    {
-        Debug.Log("设置已保存");
-        SwitchSettingPanel(false);
-    }
-
-    // === 新增：播放按钮音效辅助方法 ===
-    private void PlayButtonSound()
-    {
-        if (GameData.Instance && GameData.Instance.ButtonClickSound)
-        {
-            if (uiAudioSource == null) uiAudioSource = GetComponent<AudioSource>();
-            if (uiAudioSource != null)
-            {
-                // 使用 PlayOneShot 允许多重音效叠加
-                uiAudioSource.PlayOneShot(GameData.Instance.ButtonClickSound, GameData.Instance.ButtonVolume);
-            }
-        }
-    }
+    private void SaveSettings() { Debug.Log("设置已保存"); SwitchSettingPanel(false); }
+    private void PlayButtonSound() { if (GameData.Instance && GameData.Instance.ButtonClickSound) { if (uiAudioSource == null) uiAudioSource = GetComponent<AudioSource>(); if (uiAudioSource != null) uiAudioSource.PlayOneShot(GameData.Instance.ButtonClickSound, GameData.Instance.ButtonVolume); } }
 }

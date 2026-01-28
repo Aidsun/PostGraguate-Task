@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Video;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement; // 必须引入
 using System.Collections;
 
 public class StartGame : MonoBehaviour
@@ -17,42 +18,39 @@ public class StartGame : MonoBehaviour
     public Button quitBtn;
     public Button closeHelpBtn;
 
+    // 【新增】加载遮罩 (防止连点)
+    public GameObject loadingMask;
+
     public string nextSceneName = "Museum_Main";
 
     private VideoPlayer pausedPlayer;
+    private bool isStarting = false; // 防止重复点击
 
     void Start()
     {
-        // 强制显示并解锁鼠标
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        // 1. 初始化UI状态
         if (uiGroup) { uiGroup.alpha = 0f; uiGroup.interactable = false; uiGroup.blocksRaycasts = false; }
         if (helpPanel) helpPanel.SetActive(false);
+        if (loadingMask) loadingMask.SetActive(false); // 隐藏遮罩
 
-        // 2. 绑定按钮 
         if (startBtn) startBtn.onClick.AddListener(OnStartGame);
         if (helpBtn) helpBtn.onClick.AddListener(OnOpenHelp);
         if (closeHelpBtn) closeHelpBtn.onClick.AddListener(OnCloseHelp);
         if (quitBtn) quitBtn.onClick.AddListener(OnQuitGame);
 
-        // 3. 音频路由
         RouteAudioToBgm(introPlayer);
         RouteAudioToBgm(loopPlayer);
 
-        // 4. 流程控制与预加载
         if (GameData.Instance != null && !GameData.Instance.HasPlayedIntro)
         {
-            // === 【关键修改】 ===
-            // 立即开始准备第二段视频，让它在后台加载数据
             if (loopPlayer)
             {
-                loopPlayer.gameObject.SetActive(true); // 必须激活才能 Prepare，但我们暂不 Play
-                loopPlayer.playOnAwake = false;       // 确保 Inspector 里也是关的，防止自动播
-                loopPlayer.Prepare();                 // 【核心】只预加载，不播放
+                loopPlayer.gameObject.SetActive(true);
+                loopPlayer.playOnAwake = false;
+                loopPlayer.Prepare();
             }
-
             PlayIntroSequence();
             GameData.Instance.HasPlayedIntro = true;
         }
@@ -64,14 +62,12 @@ public class StartGame : MonoBehaviour
 
     void Update()
     {
-        // 跳过逻辑
         if (GameData.Instance != null && GameData.Instance.AllowSkipIntro)
         {
             if (introPlayer != null && introPlayer.gameObject.activeSelf && introPlayer.isPlaying)
             {
                 if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.F))
                 {
-                    Debug.Log("用户操作：跳过片头视频");
                     introPlayer.loopPointReached -= OnIntroFinished;
                     OnIntroFinished(introPlayer);
                 }
@@ -79,12 +75,10 @@ public class StartGame : MonoBehaviour
         }
     }
 
-    // ... (中间的 Help 面板逻辑保持不变) ...
     void OnOpenHelp()
     {
         if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
         if (helpPanel) helpPanel.SetActive(true);
-
         if (introPlayer != null && introPlayer.isPlaying) { introPlayer.Pause(); pausedPlayer = introPlayer; }
         else if (loopPlayer != null && loopPlayer.isPlaying) { loopPlayer.Pause(); pausedPlayer = loopPlayer; }
     }
@@ -95,13 +89,9 @@ public class StartGame : MonoBehaviour
         if (helpPanel) helpPanel.SetActive(false);
         if (pausedPlayer != null) { pausedPlayer.Play(); pausedPlayer = null; }
     }
-    // ... (中间逻辑结束) ...
 
     void PlayIntroSequence()
     {
-        // 注意：这里不要把 loopPlayer SetActive(false)，因为我们正在 Prepare 它
-        // 只要 introPlayer 挡在它前面（Render Order 更高）或者 loopPlayer 还没 Play 即可
-
         if (introPlayer)
         {
             introPlayer.gameObject.SetActive(true);
@@ -117,14 +107,9 @@ public class StartGame : MonoBehaviour
         OnIntroFinished(null);
     }
 
-    // =========================================================
-    // 【核心修改】零延迟切换协程
-    // =========================================================
     void OnIntroFinished(VideoPlayer vp)
     {
         StartCoroutine(SwitchVideoSeamlessly());
-
-        // UI 显示
         if (uiGroup)
         {
             uiGroup.alpha = 1f;
@@ -135,28 +120,13 @@ public class StartGame : MonoBehaviour
 
     IEnumerator SwitchVideoSeamlessly()
     {
-        // 1. 此时 loopPlayer 应该已经 Prepare 完成了
         if (loopPlayer)
         {
-            // 确保物体是激活的
             loopPlayer.gameObject.SetActive(true);
             loopPlayer.isLooping = true;
-
-            // 因为已经在 Start() 里 Prepare 过了，这里调用 Play 会非常快
             loopPlayer.Play();
-
-            // 2. 【双重保险检测】
-            // 我们不检测 isPrepared (因为可能还没好)，也不只检测 isPlaying
-            // 我们检测 frame > 0，这意味着 GPU 真的已经渲染出了至少一帧画面
-
-            // 等待直到 loopPlayer 真正输出了画面
-            while (loopPlayer.frame <= 0)
-            {
-                yield return null;
-            }
+            while (loopPlayer.frame <= 0) yield return null;
         }
-
-        // 3. 只有当新画面确实渲染出来覆盖住屏幕了，才关掉旧的
         if (introPlayer)
         {
             introPlayer.Stop();
@@ -172,11 +142,45 @@ public class StartGame : MonoBehaviour
         vp.SetTargetAudioSource(0, AudioManager.Instance.BgmSource);
     }
 
+    // =========================================================
+    // 【核心优化】点击开始按钮后的逻辑
+    // =========================================================
     void OnStartGame()
     {
+        if (isStarting) return; // 防止重复点击
+        isStarting = true;
+
         Time.timeScale = 1f;
         if (AudioManager.Instance) AudioManager.Instance.PlayClickSound();
-        SceneLoading.LoadLevel(nextSceneName);
+
+        // 1. 显示一个简单的遮罩 (可选，比如转圈圈)，防止用户觉得没反应
+        if (loadingMask) loadingMask.SetActive(true);
+
+        // 2. 开启协程，平滑切换到 LoadingScene
+        StartCoroutine(TransitionToLoading());
+    }
+
+    IEnumerator TransitionToLoading()
+    {
+        // 告诉 SceneLoading 下一站是哪里
+        SceneLoading.SceneToLoad = nextSceneName;
+
+        // 3. 异步加载 "LoadingScene"
+        // 这一步非常快，因为 LoadingScene 只有几张图片，几乎瞬间完成
+        AsyncOperation op = SceneManager.LoadSceneAsync("LoadingScene");
+
+        // 禁止自动跳转，直到加载完成 (虽然这里很快，但保持习惯)
+        op.allowSceneActivation = false;
+
+        while (op.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        // 4. 允许跳转，瞬间进入加载界面
+        op.allowSceneActivation = true;
+
+        // 之后的事情就交给 SceneLoading.cs 去处理那个巨大的 Museum_Main 了
     }
 
     void OnQuitGame()
