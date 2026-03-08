@@ -84,7 +84,7 @@ Assets/
    - Unity 2021.3 LTS 或更高版本。
    - Visual Studio 2019/2022 (推荐)。
 2. **安装步骤**:
-   - 克隆本仓库: `git clone https://github.com/YourUsername/RedCulture-Exhibition.git`
+   - 克隆本仓库: `git clone https://github.com/Aidsun/RedGeine.git`
    - 使用 Unity Hub 打开项目文件夹。
    - 打开 `_Scenes/StartGame` 场景作为入口运行。
 
