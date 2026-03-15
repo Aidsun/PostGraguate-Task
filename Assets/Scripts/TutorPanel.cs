@@ -1,27 +1,36 @@
+// 文件：TutorPanel.cs
+// 模块：UI / 新手引导提示面板
+// 说明：该脚本是一个全局单例的UI管理器，负责显示和隐藏新手引导提示面板。
+//      当玩家触发TutorCube时，TutorPanel会显示提示文本，并可选择是否暂停游戏。
+//      它实时监控鼠标状态，确保面板打开时鼠标始终可见且未锁定，避免与其他UI（如设置面板）冲突。
+// 特性：单例模式，通过Update实时强制鼠标显示，使用协程（虽然这里未使用），
+//      与AudioManager交互播放音效，与GameData交互获取音效资源。
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
+using TMPro;                  // 使用TextMeshPro文本组件
+using UnityEngine.UI;         // 使用UI组件（虽未直接使用Button，但保留了引用）
 
 public class TutorPanel : MonoBehaviour
 {
-    // 单例模式
+    // 单例实例，只读属性
     public static TutorPanel Instance { get; private set; }
 
-    [Header("UI 组件")]
-    public GameObject panelObject;      // 面板物体
-    public TextMeshProUGUI contentText; // 文本框
+    [Header("UI 组件")]           // Inspector分组
+    public GameObject panelObject;      // 提示面板的根物体
+    public TextMeshProUGUI contentText; // 显示提示内容的文本框
 
     [Header("设置")]
-    public bool pauseGame = false;       // 是否暂停游戏
+    public bool pauseGame = false;       // 是否在打开面板时暂停游戏
 
     private void Awake()
     {
+        // 标准单例实现：如果不存在则设置为当前实例，否则销毁当前对象
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
-        HidePanel(); // 初始化时隐藏
+        HidePanel(); // 初始化时隐藏面板
     }
 
     // =========================================================
@@ -31,9 +40,10 @@ public class TutorPanel : MonoBehaviour
     // =========================================================
     private void Update()
     {
+        // 如果面板存在且处于激活状态
         if (panelObject != null && panelObject.activeSelf)
         {
-            // 如果发现鼠标被别人偷偷藏起来了，或者锁住了
+            // 如果发现鼠标被别人偷偷藏起来了，或者锁住了（例如设置面板关闭后错误地锁了鼠标）
             if (!Cursor.visible || Cursor.lockState != CursorLockMode.None)
             {
                 // 立刻强制恢复显示！
@@ -44,16 +54,21 @@ public class TutorPanel : MonoBehaviour
     }
 
     // === 打开面板 ===
+    /// <summary>
+    /// 显示提示面板，设置文本内容，并根据设置决定是否暂停游戏。
+    /// 同时强制显示鼠标。
+    /// </summary>
+    /// <param name="text">要显示的提示文本</param>
     public void ShowPanel(string text)
     {
-        contentText.text = text;
-        panelObject.SetActive(true);
+        contentText.text = text;          // 设置文本
+        panelObject.SetActive(true);      // 显示面板
 
-        PlayPanelSound();
+        PlayPanelSound();                  // 播放面板打开音效
 
         if (pauseGame)
         {
-            Time.timeScale = 0f;
+            Time.timeScale = 0f;           // 暂停游戏时间
         }
 
         // 虽然 Update 会做，但打开瞬间也做一次，响应更快
@@ -62,17 +77,21 @@ public class TutorPanel : MonoBehaviour
     }
 
     // === 关闭面板 ===
+    /// <summary>
+    /// 隐藏提示面板，并根据设置恢复游戏时间。
+    /// 关闭后，如果面板确实已隐藏，则恢复鼠标锁定（适用于第一人称场景）。
+    /// </summary>
     public void HidePanel()
     {
-        panelObject.SetActive(false);
-        PlayBtnSound();
+        panelObject.SetActive(false);      // 隐藏面板
+        PlayBtnSound();                     // 播放按钮音效（关闭音效）
 
         if (pauseGame)
         {
-            Time.timeScale = 1f;
+            Time.timeScale = 1f;            // 恢复游戏时间
         }
 
-        // 只有当面板真的关闭了，才锁住鼠标
+        // 只有当面板真的关闭了，才锁住鼠标（适合第一人称场景）
         if (!panelObject.activeSelf)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -81,16 +100,25 @@ public class TutorPanel : MonoBehaviour
     }
 
     // === 内部辅助方法 ===
+    /// <summary>
+    /// 播放面板打开音效（使用PanelOpenSound）
+    /// </summary>
     private void PlayPanelSound()
     {
+        // 检查AudioManager、BtnSource、GameData和PanelOpenSound是否存在
         if (AudioManager.Instance && AudioManager.Instance.BtnSource &&
             GameData.Instance && GameData.Instance.PanelOpenSound)
         {
             AudioManager.Instance.BtnSource.PlayOneShot(GameData.Instance.PanelOpenSound);
         }
     }
+
+    /// <summary>
+    /// 播放按钮点击音效（关闭面板时使用ButtonClickSound）
+    /// </summary>
     private void PlayBtnSound()
     {
+        // 注意：这里使用了ButtonClickSound，而不是PanelOpenSound
         if (AudioManager.Instance && AudioManager.Instance.BtnSource &&
             GameData.Instance && GameData.Instance.PanelOpenSound)
         {
