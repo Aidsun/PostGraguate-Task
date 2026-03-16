@@ -80,7 +80,8 @@ public class PlayerInteraction : MonoBehaviour
             var vid = hit.collider.GetComponentInParent<VideoExhibition>();
             var pnm = hit.collider.GetComponentInParent<PanoramaExhibition>();
             var quiz = hit.collider.GetComponentInParent<QuestionInteraction>();
-
+            var guide = hit.collider.GetComponentInParent<GuideNPC>();
+            var quizPoint = hit.collider.GetComponentInParent<QuizPoint>();
             string msg = "";   // 要显示的交互提示文字
 
             // =========================================================
@@ -106,6 +107,16 @@ public class PlayerInteraction : MonoBehaviour
             {
                 msg = "左键进入答题";
                 HandleInteract(quiz, msg);
+            }
+            else if (guide)
+            {
+                msg = "与导览员对话";
+                HandleInteract(guide,msg);
+            }
+            else if (quizPoint)
+            {
+                msg = "左键进入答题点进行答题";
+                HandleInteract(quizPoint, msg);
             }
             else
             {

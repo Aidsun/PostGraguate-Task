@@ -61,19 +61,27 @@ public class TutorPanel : MonoBehaviour
     /// <param name="text">要显示的提示文本</param>
     public void ShowPanel(string text)
     {
-        contentText.text = text;          // 设置文本
-        panelObject.SetActive(true);      // 显示面板
-
-        PlayPanelSound();                  // 播放面板打开音效
-
-        if (pauseGame)
+        Debug.Log($"[TutorPanel] ShowPanel 被调用，文本内容：{text}，当前面板激活状态：{panelObject?.activeSelf}");
+        if (panelObject == null)
         {
-            Time.timeScale = 0f;           // 暂停游戏时间
+            Debug.LogError("[TutorPanel] panelObject 为 null！");
+            return;
+        }
+        // 检查父物体激活状态
+        Transform parent = panelObject.transform.parent;
+        if (parent != null)
+        {
+            Debug.Log($"[TutorPanel] 父物体 {parent.name} 激活状态：{parent.gameObject.activeSelf}");
+        }
+        else
+        {
+            Debug.Log("[TutorPanel] panelObject 没有父物体");
         }
 
-        // 虽然 Update 会做，但打开瞬间也做一次，响应更快
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        contentText.text = text;
+        panelObject.SetActive(true);
+        Debug.Log($"[TutorPanel] SetActive(true) 后，面板激活状态：{panelObject.activeSelf}");
+        // ... 其余代码
     }
 
     // === 关闭面板 ===

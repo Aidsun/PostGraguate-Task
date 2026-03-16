@@ -12,6 +12,7 @@ using System.Collections.Generic;
 
 public class GameData : MonoBehaviour
 {
+
     // 单例实例，全局唯一访问点
     public static GameData Instance;
 
@@ -88,7 +89,9 @@ public class GameData : MonoBehaviour
     // 【新增】永久记录已触发的引导ID (防复活名单)
     // 用于存储已经触发过的引导提示的ID，防止同一引导反复出现
     public List<string> CompletedGuideIds = new List<string>();
-
+    //答题印章收集记录
+    public List<string> collectedStamps = new List<string>(); // 已获得的印章ID
+    public bool rewardClaimed = false;   // 标记是否已领取过导览员奖励
     // 玩家位置记忆
     public bool ShouldRestorePosition = false;      // 标记是否需要在进入主馆时恢复玩家位置
     public Vector3 LastPlayerPosition;               // 最后记录的玩家位置
