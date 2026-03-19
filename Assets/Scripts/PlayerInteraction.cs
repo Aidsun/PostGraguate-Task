@@ -115,8 +115,17 @@ public class PlayerInteraction : MonoBehaviour
             }
             else if (quizPoint)
             {
-                msg = "左键进入答题点进行答题";
-                HandleInteract(quizPoint, msg);
+                // 检查任务是否已开始
+                if (GameData.Instance != null && GameData.Instance.questStarted)
+                {
+                    msg = "左键进入答题点进行答题";
+                    HandleInteract(quizPoint, msg);
+                }
+                else
+                {
+                    // 任务未开始，忽略该物体，清除高亮
+                    ClearHighlight();
+                }
             }
             else
             {

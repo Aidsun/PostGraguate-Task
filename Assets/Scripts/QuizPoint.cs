@@ -87,10 +87,12 @@ public class QuizPoint : MonoBehaviour
             GameData.Instance.collectedStamps.Add(stampId);
             message = $"恭喜你答对了{correctCount}题，通过考核！获得印章一枚。";
             Debug.Log($"[QuizPoint] 获得印章: {stampId}");
+            //保存游戏进度
+            GameData.Instance.SaveGame();
         }
         else
         {
-            message = $"很遗憾，你只答对了{correctCount}题，未达到80%，无法获得印章。";
+            message = $"很遗憾，你只答对了{correctCount}题，未达到60%，无法获得印章。";
         }
 
         TutorPanel.Instance.ShowPanel(message);

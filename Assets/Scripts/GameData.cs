@@ -1,157 +1,207 @@
 // 文件：GameData.cs
 // 模块：核心管理器 / 游戏全局数据
 // 说明：该类作为游戏全局数据的单例管理器，存储所有跨场景持久化的游戏状态、设置和资源引用。
-//      包括玩家状态（保险箱数据）、音量控制、全局音频资源、游戏参数、交互设置、引导记录、位置记忆、
-//      背景图库以及当前展示场景的数据包（ImagePacket/VideoPacket/PanoramaPacket）。
-// 特性：单例模式，DontDestroyOnLoad跨场景持久化，使用[System.Serializable]定义可序列化结构，
-//      使用[Header]、[Range]、[Space]、[HideInInspector]等特性优化Inspector显示。
+//      新增数据持久化功能，通过 SaveGame() 和 LoadGame() 将数据保存到 persistentDataPath 的 save.json 文件中。
+// 特性：单例模式，DontDestroyOnLoad，JSON序列化。
 
 using UnityEngine;
-using UnityEngine.Video;      // 使用VideoClip类型
+using UnityEngine.Video;
 using System.Collections.Generic;
+using System.IO;
 
 public class GameData : MonoBehaviour
 {
-
-    // 单例实例，全局唯一访问点
     public static GameData Instance;
-
-    private void Awake()
-    {
-        // 标准单例实现：如果不存在则创建并保持，否则销毁新对象
-        if (Instance == null)
-        {
-            Instance = this;
-            // 使该游戏对象在加载新场景时不被销毁
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            // 已存在实例，销毁当前对象
-            Destroy(gameObject);
-        }
-    }
 
     // =========================================================
     // 【核心结构】保险箱数据
     // =========================================================
-    /// <summary>
-    /// 玩家状态数据结构，用于在场景切换前临时保存玩家位置、视角模式等信息。
-    /// 相当于一个“保险箱”，当从主馆跳转到展示场景时，将玩家状态存入此处，
-    /// 返回主馆时再恢复。
-    /// </summary>
-    [System.Serializable]   // 使该结构可以在Inspector中显示，并支持序列化
+    [System.Serializable]
     public struct PlayerStateData
     {
-        public Vector3 Position;      // 玩家位置
-        public Quaternion Rotation;    // 玩家旋转
-        public bool IsFirstPerson;     // 是否为第一人称视角
-        public bool HasData;           // 标记是否存有有效数据
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public bool IsFirstPerson;
+        public bool HasData;
     }
-
-    // 临时存储的玩家状态数据
     public PlayerStateData TempSafeState;
 
     // =========================================================
 
     [Header("=== 1. 全局状态记录 ===")]
-    // 是否已经播放过开场动画，用于控制开场动画只播放一次
     public bool HasPlayedIntro = false;
 
     [Header("=== 2. 全局音量控制 ===")]
-    // Range特性限制音量值在0~1之间，并在Inspector中显示为滑块
-    [Range(0, 1)] public float BgmVolume = 1.0f;     // 背景音乐音量
-    [Range(0, 1)] public float VideoVolume = 1.0f;   // 视频音量
-    [Range(0, 1)] public float VoiceVolume = 1.0f;   // 解说语音音量
-    [Range(0, 1)] public float ButtonVolume = 1.0f;  // 按钮音效音量
+    [Range(0, 1)] public float BgmVolume = 1.0f;
+    [Range(0, 1)] public float VideoVolume = 1.0f;
+    [Range(0, 1)] public float VoiceVolume = 1.0f;
+    [Range(0, 1)] public float ButtonVolume = 1.0f;
 
     [Header("=== 3. 全局音频资源 ===")]
-    // 直接在Inspector中拖拽的音频剪辑，供AudioManager等脚本使用
-    public AudioClip ButtonClickSound;   // 按钮点击音效
-    public AudioClip HighlightSound;     // 高亮提示音效（当玩家聚焦可交互物体时）
-    public AudioClip PanelOpenSound;     // 面板打开音效
-    public AudioClip MainThemeSong;      // 主馆背景音乐
+    public AudioClip ButtonClickSound;
+    public AudioClip HighlightSound;
+    public AudioClip PanelOpenSound;
+    public AudioClip MainThemeSong;
 
     [Header("=== 4. 游戏参数 ===")]
-    public Color HighlightColor = Color.yellow;   // 物体高亮时的颜色
-    public float MoveSpeed = 5.0f;                 // 玩家移动速度
-    public float JumpHeight = 1.2f;                // 跳跃高度
-    public float InteractionDistance = 20.0f;      // 玩家可交互的最大距离
-    public float StepDistance = 1.8f;               // 脚步声步长（移动多少米触发一次脚步声）
+    public Color HighlightColor = Color.yellow;
+    public float MoveSpeed = 5.0f;
+    public float JumpHeight = 1.2f;
+    public float InteractionDistance = 20.0f;
+    public float StepDistance = 1.8f;
+    [HideInInspector] public KeyCode VideoPauseKey = KeyCode.Space;
 
-    // HideInInspector使该字段在Inspector中隐藏，但仍可在代码中访问和序列化
-    [HideInInspector] public KeyCode VideoPauseKey = KeyCode.Space;   // 视频播放时暂停/继续的按键
-
-    [Space(10)]   // 在Inspector中添加10像素的垂直间距
+    [Space(10)]
     [Header("=== 5. 交互设置 ===")]
-    public bool AllowSkipIntro = true;   // 是否允许跳过开场动画
+    public bool AllowSkipIntro = true;
 
-    // 【新增】永久记录已触发的引导ID (防复活名单)
-    // 用于存储已经触发过的引导提示的ID，防止同一引导反复出现
+    // 引导记录
     public List<string> CompletedGuideIds = new List<string>();
-    //答题印章收集记录
-    public List<string> collectedStamps = new List<string>(); // 已获得的印章ID
-    public bool rewardClaimed = false;   // 标记是否已领取过导览员奖励
+    // 答题印章收集记录
+    public List<string> collectedStamps = new List<string>();
+    // 任务是否已开始
+    public bool questStarted = false;
+    // 是否已领取导览员奖励
+    public bool rewardClaimed = false;
+
     // 玩家位置记忆
-    public bool ShouldRestorePosition = false;      // 标记是否需要在进入主馆时恢复玩家位置
-    public Vector3 LastPlayerPosition;               // 最后记录的玩家位置
-    public Quaternion LastPlayerRotation;            // 最后记录的玩家旋转
-    public bool WasFirstPerson = true;               // 最后记录的视角模式
+    public bool ShouldRestorePosition = false;
+    public Vector3 LastPlayerPosition;
+    public Quaternion LastPlayerRotation;
+    public bool WasFirstPerson = true;
 
     // 资源库
-    public List<Sprite> ContentBackgrounds;   // 展示场景中内容区域的随机背景图库
-    public List<Sprite> LoadingBackgrounds;   // 加载场景中的随机背景图库
+    public List<Sprite> ContentBackgrounds;
+    public List<Sprite> LoadingBackgrounds;
 
     // --- 数据包定义 ---
-    // 这些类用于在不同场景间传递展品数据，例如从主馆的展品对象传递到展示场景
     [System.Serializable]
-    public class ImagePacket
-    {
-        public string Title;           // 展品标题
-        public Sprite ImageContent;    // 图片内容
-        public string Description;      // 描述文字
-        public AudioClip VoiceClip;     // 解说音频
-        public bool AutoPlayVoice;      // 是否自动播放解说
-    }
-    public static ImagePacket CurrentImage;   // 当前正在处理的图文展品数据
+    public class ImagePacket { public string Title; public Sprite ImageContent; public string Description; public AudioClip VoiceClip; public bool AutoPlayVoice; }
+    public static ImagePacket CurrentImage;
 
     [System.Serializable]
-    public class VideoPacket
-    {
-        public string Title;
-        public VideoClip VideoContent;  // 视频内容
-        public string Description;
-        public AudioClip VoiceClip;
-        public bool AutoPlayVoice;
-    }
-    public static VideoPacket CurrentVideo;   // 当前正在处理的视频展品数据
+    public class VideoPacket { public string Title; public VideoClip VideoContent; public string Description; public AudioClip VoiceClip; public bool AutoPlayVoice; }
+    public static VideoPacket CurrentVideo;
 
     [System.Serializable]
-    public class PanoramaPacket
+    public class PanoramaPacket { public string Title; public VideoClip PanoramaContent; public AudioClip VoiceClip; public bool AutoPlayVoice; }
+    public static PanoramaPacket CurrentPanorama;
+
+    // =========================================================
+    // 数据持久化相关
+    // =========================================================
+    [System.Serializable]
+    private class SaveData
     {
-        public string Title;
-        public VideoClip PanoramaContent;  // 全景视频内容
-        public AudioClip VoiceClip;
-        public bool AutoPlayVoice;
+        public bool HasPlayedIntro;
+        public float BgmVolume;
+        public float VideoVolume;
+        public float VoiceVolume;
+        public float ButtonVolume;
+        public List<string> collectedStamps;
+        public bool questStarted;
+        public bool rewardClaimed;
+        public List<string> CompletedGuideIds;
     }
-    public static PanoramaPacket CurrentPanorama;   // 当前正在处理的全景展品数据
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            LoadGame();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// 保存游戏数据到文件
+    /// </summary>
+    public void SaveGame()
+    {
+        SaveData data = new SaveData();
+        data.HasPlayedIntro = HasPlayedIntro;
+        data.BgmVolume = BgmVolume;
+        data.VideoVolume = VideoVolume;
+        data.VoiceVolume = VoiceVolume;
+        data.ButtonVolume = ButtonVolume;
+        data.collectedStamps = collectedStamps;
+        data.questStarted = questStarted;
+        data.rewardClaimed = rewardClaimed;
+        data.CompletedGuideIds = CompletedGuideIds;
+
+        string json = JsonUtility.ToJson(data, true);
+        string path = Path.Combine(Application.persistentDataPath, "save.json");
+        File.WriteAllText(path, json);
+        Debug.Log("游戏已保存到: " + path);
+    }
+
+    /// <summary>
+    /// 从文件加载游戏数据
+    /// </summary>
+    private void LoadGame()
+    {
+        string path = Path.Combine(Application.persistentDataPath, "save.json");
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            if (data != null)
+            {
+                HasPlayedIntro = data.HasPlayedIntro;
+                BgmVolume = data.BgmVolume;
+                VideoVolume = data.VideoVolume;
+                VoiceVolume = data.VoiceVolume;
+                ButtonVolume = data.ButtonVolume;
+                collectedStamps = data.collectedStamps ?? new List<string>();
+                questStarted = data.questStarted;
+                rewardClaimed = data.rewardClaimed;
+                CompletedGuideIds = data.CompletedGuideIds ?? new List<string>();
+
+                Debug.Log("游戏已加载");
+            }
+        }
+        else
+        {
+            Debug.Log("无存档文件，使用默认设置");
+        }
+    }
+
+    /// <summary>
+    /// 重置游戏进度（清空印章、任务状态、奖励等）
+    /// </summary>
+    public void ResetProgress()
+    {
+        collectedStamps.Clear();
+        questStarted = false;
+        rewardClaimed = false;
+        CompletedGuideIds.Clear();
+        SaveGame();
+        Debug.Log("游戏进度已重置");
+    }
 
     // 辅助方法
-    /// <summary>
-    /// 从内容背景图库中随机返回一张Sprite。
-    /// </summary>
     public Sprite GetRandomContentBG()
     {
         if (ContentBackgrounds == null || ContentBackgrounds.Count == 0) return null;
         return ContentBackgrounds[Random.Range(0, ContentBackgrounds.Count)];
     }
 
-    /// <summary>
-    /// 从加载背景图库中随机返回一张Sprite。
-    /// </summary>
     public Sprite GetRandomLoadingBG()
     {
         if (LoadingBackgrounds == null || LoadingBackgrounds.Count == 0) return null;
         return LoadingBackgrounds[Random.Range(0, LoadingBackgrounds.Count)];
     }
+
+#if UNITY_EDITOR
+    [ContextMenu("Reset Progress")]
+    private void ResetProgressEditor()
+    {
+        ResetProgress();
+    }
+#endif
 }

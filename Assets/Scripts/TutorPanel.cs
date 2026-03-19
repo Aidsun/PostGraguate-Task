@@ -115,9 +115,9 @@ public class TutorPanel : MonoBehaviour
     {
         // 检查AudioManager、BtnSource、GameData和PanelOpenSound是否存在
         if (AudioManager.Instance && AudioManager.Instance.BtnSource &&
-            GameData.Instance && GameData.Instance.PanelOpenSound)
+            GameData.Instance && GameData.Instance.ButtonClickSound)
         {
-            AudioManager.Instance.BtnSource.PlayOneShot(GameData.Instance.PanelOpenSound);
+            AudioManager.Instance.BtnSource.PlayOneShot(GameData.Instance.ButtonClickSound);
         }
     }
 

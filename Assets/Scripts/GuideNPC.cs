@@ -1,6 +1,10 @@
 using UnityEngine;
 using TMPro;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 public class GuideNPC : MonoBehaviour
 {
     [Header("导览员配置")]
@@ -8,24 +12,22 @@ public class GuideNPC : MonoBehaviour
     public string welcomeMessage = "欢迎来到红色阅兵展馆！为了让你更深入地了解历史，我们设置了7个答题点。每答对一题可以获得一枚印章，集齐全部7枚印章后，可以来找我领取奖励。";
 
     [TextArea(2, 3)]
-    public string progressMessage = "你已经获得了 {0} / 7 枚印章，继续加油！"; // 使用占位符 {0} 替换实际数量
+    public string progressMessage = "你已经获得了 {0} / 7 枚印章，继续加油！";
 
     [TextArea(3, 5)]
-    public string rewardMessage = "恭喜你集齐了所有印章！这是给你的神秘奖励！";
+    public string rewardMessage = "恭喜你集齐了所有印章！获得称号【绝对老手】！";
 
     [TextArea(2, 3)]
-    public string alreadyClaimedMessage = "你已经领取过奖励了，谢谢参与！";
+    public string alreadyClaimedMessage = "恭喜你集齐了所有印章！获得称号【绝对老手】！谢谢参与！";
 
-    [Header("奖励设置")]
-    public GameObject rewardEffect;      // 奖励特效预制体（可选）
-    public AudioClip rewardSound;        // 奖励音效（可选）
+    [Header("开发者模式（测试用）")]
+    public bool devFastReward = false;
 
     [Header("组件绑定")]
-    public Renderer outlineRenderer;      // 高亮边框
-    public TMP_Text nameLabel;            // 头顶名字（可选）
+    public Renderer outlineRenderer;
+    public TMP_Text nameLabel;
 
-    private bool hasIntroduced = false;   // 是否已经介绍过任务
-    private const int totalStamps = 7;    // 总印章数（可与答题点数量保持一致）
+    private const int totalStamps = 7;
 
     private void Start()
     {
@@ -33,7 +35,6 @@ public class GuideNPC : MonoBehaviour
             nameLabel.text = "导览员";
     }
 
-    // 由 PlayerInteraction 调用，设置高亮
     public void SetHighlight(bool active)
     {
         if (outlineRenderer != null && GameData.Instance != null)
@@ -42,64 +43,75 @@ public class GuideNPC : MonoBehaviour
         }
     }
 
-    // 由 PlayerInteraction 调用，触发对话
     public void StartDisplay()
     {
-        if (GameData.Instance == null) return;
-        if (TutorPanel.Instance == null) return;
+        if (GameData.Instance == null || TutorPanel.Instance == null) return;
 
         int collected = GameData.Instance.collectedStamps.Count;
 
-        // 如果已经集齐印章
-        if (collected >= totalStamps)
+        // 已领取奖励
+        if (GameData.Instance.rewardClaimed)
         {
-            // 如果尚未领取奖励，则触发奖励
-            if (!GameData.Instance.rewardClaimed)
-            {
-                GiveReward();
-            }
-            else
-            {
-                // 已领取过奖励，显示提示
-                TutorPanel.Instance.ShowPanel(alreadyClaimedMessage);
-            }
+            TutorPanel.Instance.ShowPanel(alreadyClaimedMessage);
             return;
         }
 
-        // 未集齐印章
-        if (!hasIntroduced)
+        // 开发者模式：已介绍任务且未集齐时直接给奖励
+        if (devFastReward && GameData.Instance.questStarted && collected < totalStamps)
         {
-            // 首次对话：介绍任务
+            GiveReward();
+            return;
+        }
+
+        // 集齐印章
+        if (collected >= totalStamps)
+        {
+            GiveReward();
+            return;
+        }
+
+        // 未集齐且未领取
+        if (!GameData.Instance.questStarted)
+        {
             TutorPanel.Instance.ShowPanel(welcomeMessage);
-            hasIntroduced = true;
+            GameData.Instance.questStarted = true;
+            GameData.Instance.SaveGame();
         }
         else
         {
-            // 非首次对话：报告进度
             string progress = string.Format(progressMessage, collected);
             TutorPanel.Instance.ShowPanel(progress);
         }
     }
 
-    // 发放奖励
     private void GiveReward()
     {
-        // 显示奖励信息
         TutorPanel.Instance.ShowPanel(rewardMessage);
-
-        // 播放奖励特效（如果有）
-        if (rewardEffect != null)
-        {
-            Instantiate(rewardEffect, transform.position, Quaternion.identity);
-        }
-
-        // 播放奖励音效（建议使用 BtnSource 或专门的 SFX 源）
-        if (rewardSound != null && AudioManager.Instance != null && AudioManager.Instance.BtnSource != null)
-        {
-            AudioManager.Instance.BtnSource.PlayOneShot(rewardSound);
-        }
-
-        // 标记已领取奖励（需要在 GameData 中添加 rewardClaimed 字段）
         GameData.Instance.rewardClaimed = true;
+        GameData.Instance.SaveGame();
     }
 }
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(GuideNPC))]
+public class GuideNPCInspector : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+        GUILayout.Space(10);
+        if (GUILayout.Button("重置收集进度"))
+        {
+            if (GameData.Instance != null)
+            {
+                GameData.Instance.ResetProgress();
+                Debug.Log("收集进度已重置");
+            }
+            else
+            {
+                Debug.LogWarning("GameData.Instance 不存在");
+            }
+        }
+    }
+}
+#endif
