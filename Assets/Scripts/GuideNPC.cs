@@ -18,7 +18,10 @@ public class GuideNPC : MonoBehaviour
     public string rewardMessage = "恭喜你集齐了所有印章！获得称号【绝对老手】！";
 
     [TextArea(2, 3)]
-    public string alreadyClaimedMessage = "恭喜你集齐了所有印章！获得称号【绝对老手】！谢谢参与！";
+    public string alreadyClaimedMessage = "你已经领取过奖励了，谢谢参与！";
+
+    [Header("引导设置")]
+    public GameObject routeArrow;  // 路线指示箭头物体，第一次对话后消失
 
     [Header("开发者模式（测试用）")]
     public bool devFastReward = false;
@@ -33,6 +36,10 @@ public class GuideNPC : MonoBehaviour
     {
         if (nameLabel != null)
             nameLabel.text = "导览员";
+
+        // 如果任务已经解锁（例如加载存档），则隐藏箭头
+        //if (GameData.Instance != null && GameData.Instance.questStarted && routeArrow != null)
+        //    routeArrow.SetActive(false);
     }
 
     public void SetHighlight(bool active)
@@ -76,6 +83,10 @@ public class GuideNPC : MonoBehaviour
             TutorPanel.Instance.ShowPanel(welcomeMessage);
             GameData.Instance.questStarted = true;
             GameData.Instance.SaveGame();
+
+            // 隐藏路线箭头
+            //if (routeArrow != null)
+            //    routeArrow.SetActive(false);
         }
         else
         {

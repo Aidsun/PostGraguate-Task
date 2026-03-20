@@ -25,6 +25,7 @@ public class RouteLines : MonoBehaviour
     private LineRenderer lineRenderer;       // 路径线的渲染组件
     private Material lineMaterial;           // 路径线的材质（用于动画）
 
+    
     // 存储尚未经过的路径点列表（世界坐标）
     private List<Vector3> targetWaypoints = new List<Vector3>();
 

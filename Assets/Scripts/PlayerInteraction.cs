@@ -79,7 +79,6 @@ public class PlayerInteraction : MonoBehaviour
             var img = hit.collider.GetComponentInParent<ImageExhibition>();
             var vid = hit.collider.GetComponentInParent<VideoExhibition>();
             var pnm = hit.collider.GetComponentInParent<PanoramaExhibition>();
-            var quiz = hit.collider.GetComponentInParent<QuestionInteraction>();
             var guide = hit.collider.GetComponentInParent<GuideNPC>();
             var quizPoint = hit.collider.GetComponentInParent<QuizPoint>();
             string msg = "";   // 要显示的交互提示文字
@@ -102,11 +101,6 @@ public class PlayerInteraction : MonoBehaviour
             {
                 msg = "左键进行交互";
                 HandleInteract(pnm, msg);
-            }
-            else if (quiz)
-            {
-                msg = "左键进入答题";
-                HandleInteract(quiz, msg);
             }
             else if (guide)
             {
